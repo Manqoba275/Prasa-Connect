@@ -20,6 +20,15 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
@@ -27,4 +36,4 @@ jobs:
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Run unit tests
-        run: ./gradlew test --no-daemon
+        run: ./gradlew testDebugUnitTest --no-daemon
