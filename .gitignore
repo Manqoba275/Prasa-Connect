@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+.kotlin/
+Screenshots/
+hs_err_pid*.log
+replay_pid*.log
