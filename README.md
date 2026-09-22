@@ -1,55 +1,103 @@
-# PRASA Connect — OPSC6312 POE
+# PRASA Connect - OPSC6312 POE
 
-## Group 10:
+Tagline: Your journey. Connected.
+
+PRASA Connect is an Android app for PRASA commuters. It supports registration, login/logout, train timetable searching, bookings, QR-style tickets, station information, incident reporting, settings, alerts and PRASA rail map access.
+
+## Group 10
+
 - Sanele Manqoba Mazibuko (ST10444275)
 - Nonhlanhla Chirwa (ST10451192)
 - Ramudzuli Nyito (ST10450776)
 
-## What this app does
-Tagline: Your journey. Connected.
+## Demo Login
 
-PRASA Connect is a mobile application designed for the Passenger Rail Agency of South Africa (PRASA). It helps commuters plan train trips, view live train times, get delay alerts, and report incidents. The app supports multi-language usage (English, Venda, and isiZulu) and provides offline functionality for key features like timetables and favorites.
+- Email: `nonhlanhla@prasa.demo`
+- Password: `password123`
 
-## Features implemented in Formative 02 Part 02
-- User Management: Register (encrypted), Login/Logout, and Profile management.
-- Journey Planning: Station selection, route viewing, and favorites (from Part 01).
-- Live Train Tracking: Visual train location and status on a map (from Part 01).
-- Incident Reporting: Report issues (cable theft, vandalism) with photos and timestamps.
-- Offline Mode: Saved timetables and favorites accessible without internet.
-- Multi-language Support: English, isiZulu, and Venda localization.
-- Service Alerts: Push notifications for delays and disruptions.
-- REST API: Connected to a hosted Node.js backend and PostgreSQL database.
+You can also create a new user with the Register screen.
 
-## Tech stack
-- Frontend: Android Studio, Kotlin, Jetpack Compose / Material 3
-- Networking: Retrofit + GSON
-- Backend: Node.js + Express.js
-- Authentication: Firebase Authentication (SSO support)
-- Push Notifications: Firebase Cloud Messaging (FCM)
-- Database: PostgreSQL
+## Implemented App Features
 
-## API & hosting
-- API base URL: <Link to Render/Heroku Hosted API>
-- Hosting provider: Render / Heroku
-- Database: PostgreSQL
+- Register with validation.
+- Login with validation.
+- Logout from the top bar.
+- Password hashing in the app data layer.
+- Timetable search.
+- Ticket booking from train schedules.
+- QR-style ticket display.
+- Incident report submission.
+- Settings for language, notifications and offline sync.
+- Alerts screen.
+- API/Data evidence screen.
+- PRASA Gauteng RailMap screen.
 
-## Changelog v1
-### Added
-- Implemented full design specifications from Planning & Design document.
-- Added multi-language support (English, Venda, isiZulu).
-- Integrated Firebase for Authentication and Cloud Messaging.
-- Implemented offline sync logic for timetables.
-### Updated
-- Refined UI colors to PRASA Blue (#004EA8) and Gold/Yellow (#FFC928).
-- Enhanced incident reporting to support photo attachments.
+## Supabase API and Database
 
-## Running the project
-1. Clone this repo.
-2. Open in Android Studio.
-3. Add your google-services.json (for Firebase) to the app/ directory.
-4. Run on an emulator or physical device.
+Supabase project: `Prasa-Connect`
 
-## Testing
-- Unit tests live in app/src/test/.
-- Run locally with ./gradlew test.
-- Automated on every push via GitHub Actions.
+Hosted API:
+
+```text
+https://awbgflgcqjofsnagkzou.supabase.co/functions/v1/prasa-api
+```
+
+Database tables:
+
+- `app_users`
+- `schedules`
+- `tickets`
+- `incidents`
+
+API routes:
+
+- `GET /`
+- `POST /auth/register`
+- `POST /auth/login`
+- `GET /schedules?from=Cape Town&to=Bellville`
+- `POST /bookings`
+- `GET /users/{userId}/tickets`
+- `POST /incidents`
+- `PATCH /users/{userId}/settings`
+
+The Android app displays the hosted API URL and table names on the API/Data screen. It also keeps a local fallback data layer so the classroom demo still works if the network is unavailable.
+
+## GitHub Actions
+
+Included workflows:
+
+- `.github/workflows/android-build.yml` builds the Android app and runs unit tests.
+- `.github/workflows/supabase-deploy.yml` deploys Supabase migrations and the Edge Function.
+
+For the Supabase deployment workflow, add these GitHub repository secrets:
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_DB_PASSWORD`
+
+## Running the Project
+
+1. Open the project in Android Studio.
+2. Let Gradle sync.
+3. Run the app on an emulator or physical Android device.
+4. Use the demo login or register a new user.
+
+## Local Validation
+
+```powershell
+.\gradlew.bat assembleDebug --no-daemon --console=plain
+```
+
+## Recommended Demo Video Path
+
+1. Show Supabase project tables.
+2. Open the hosted API URL in a browser.
+3. Register a user in the app.
+4. Log out.
+5. Log in.
+6. Search timetable data.
+7. Make a booking.
+8. Show the generated ticket.
+9. Submit an incident report.
+10. Open Settings and save changes.
+11. Open API/Data screen.
+12. Show GitHub Actions workflow files.

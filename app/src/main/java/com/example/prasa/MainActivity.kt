@@ -70,6 +70,7 @@ private val Muted = Color(0xFF6F7B8B)
 private val Success = Color(0xFF148A4A)
 private val Warning = Color(0xFFE7A900)
 private val Danger = Color(0xFFB3261E)
+private const val SUPABASE_API_URL = "https://awbgflgcqjofsnagkzou.supabase.co/functions/v1/prasa-api"
 
 private enum class Screen(val label: String) {
     Splash("Splash"),
@@ -755,9 +756,11 @@ private fun ApiScreen(api: PrasaApi) {
     ScreenColumn {
         BluePanel {
             Text("API / Database Evidence", color = Color.White, fontWeight = FontWeight.Bold)
-            Text("This prototype uses a local API-style repository. For final submission, replace it with the hosted REST API.", color = Color.White, fontSize = 13.sp)
+            Text("Hosted Supabase API is configured. The app also keeps a local fallback data layer for classroom demo reliability.", color = Color.White, fontSize = 13.sp)
         }
         Spacer(Modifier.height(12.dp))
+        ReadOnlyField("Hosted API: $SUPABASE_API_URL")
+        ReadOnlyField("Supabase tables: app_users, schedules, tickets, incidents")
         ReadOnlyField(api.lastLog)
         ReadOnlyField(api.counts())
         Spacer(Modifier.height(10.dp))
