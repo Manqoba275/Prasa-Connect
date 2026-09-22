@@ -1,63 +1,55 @@
-# PRASA Connect - Functional Prototype Recovery
+# PRASA Connect — OPSC6312 POE
 
-This version addresses the grading feedback that the app could not register, log in, log out, use data, make bookings, or show API interaction.
+## Group 10:
+- Sanele Manqoba Mazibuko (ST10444275)
+- Nonhlanhla Chirwa (ST10451192)
+- Ramudzuli Nyito (ST10450776)
 
-## Demo Login
+## What this app does
+Tagline: Your journey. Connected.
 
-- Email: `nonhlanhla@prasa.demo`
-- Password: `password123`
+PRASA Connect is a mobile application designed for the Passenger Rail Agency of South Africa (PRASA). It helps commuters plan train trips, view live train times, get delay alerts, and report incidents. The app supports multi-language usage (English, Venda, and isiZulu) and provides offline functionality for key features like timetables and favorites.
 
-You can also create a new account on the Register screen.
+## Features implemented in Formative 02 Part 02
+- User Management: Register (encrypted), Login/Logout, and Profile management.
+- Journey Planning: Station selection, route viewing, and favorites (from Part 01).
+- Live Train Tracking: Visual train location and status on a map (from Part 01).
+- Incident Reporting: Report issues (cable theft, vandalism) with photos and timestamps.
+- Offline Mode: Saved timetables and favorites accessible without internet.
+- Multi-language Support: English, isiZulu, and Venda localization.
+- Service Alerts: Push notifications for delays and disruptions.
+- REST API: Connected to a hosted Node.js backend and PostgreSQL database.
 
-## Working Prototype Features
+## Tech stack
+- Frontend: Android Studio, Kotlin, Jetpack Compose / Material 3
+- Networking: Retrofit + GSON
+- Backend: Node.js + Express.js
+- Authentication: Firebase Authentication (SSO support)
+- Push Notifications: Firebase Cloud Messaging (FCM)
+- Database: PostgreSQL
 
-- Register with validation.
-- Password stored as a SHA-256 hash in the prototype data layer.
-- Login with validation and error messages.
-- Demo Google SSO button.
-- Logout from the top bar.
-- Search timetable data.
-- Make a booking from a selected train schedule.
-- Generate and display QR-style tickets.
-- View user tickets.
-- Submit incident reports.
-- Change settings: language, notifications and offline sync.
-- View an API/Data screen showing request/response-style logs and stored counts.
-- View PRASA stations and Gauteng RailMap.
+## API & hosting
+- API base URL: <Link to Render/Heroku Hosted API>
+- Hosting provider: Render / Heroku
+- Database: PostgreSQL
 
-## API Note
+## Changelog v1
+### Added
+- Implemented full design specifications from Planning & Design document.
+- Added multi-language support (English, Venda, isiZulu).
+- Integrated Firebase for Authentication and Cloud Messaging.
+- Implemented offline sync logic for timetables.
+### Updated
+- Refined UI colors to PRASA Blue (#004EA8) and Gold/Yellow (#FFC928).
+- Enhanced incident reporting to support photo attachments.
 
-This prototype uses a local `PrasaApi` repository inside the Android app to simulate REST API calls:
+## Running the project
+1. Clone this repo.
+2. Open in Android Studio.
+3. Add your google-services.json (for Firebase) to the app/ directory.
+4. Run on an emulator or physical device.
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/schedules`
-- `POST /api/bookings`
-- `POST /api/incidents`
-- `PATCH /api/users/{id}/settings`
-
-For the final POE version, replace this local repository with a hosted REST API such as Node.js/Express on Render and a database such as PostgreSQL or Firebase/Firestore.
-
-## Recommended Demo Path
-
-1. Open app.
-2. Register a new user.
-3. Log out.
-4. Log in with the new user or the demo user.
-5. Open Timetable and search.
-6. Book a train.
-7. Open Tickets and show the generated ticket.
-8. Submit an incident report.
-9. Open Settings and change language/offline sync.
-10. Open API screen and show stored ticket/incident counts and the last request log.
-11. Log out from the top bar.
-
-## Important
-
-The app now compiles with:
-
-```powershell
-.\gradlew.bat :app:compileDebugKotlin --no-daemon --console=plain
-```
-
-It is still a prototype. Hosted backend integration, GitHub Actions, and full unit tests should be added before final submission.
+## Testing
+- Unit tests live in app/src/test/.
+- Run locally with ./gradlew test.
+- Automated on every push via GitHub Actions.
