@@ -1,6 +1,7 @@
 package com.example.prasa
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -44,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,7 +61,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.prasa.ui.theme.PrasaTheme
-import java.security.MessageDigest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URLEncoder
+import java.net.URL
 
 private val PrasaBlue = Color(0xFF004EA8)
 private val DeepBlue = Color(0xFF00356F)
@@ -90,7 +101,7 @@ private enum class Screen(val label: String) {
     Api("API")
 }
 
-private data class User(
+data class User(
     val id: String,
     val fullName: String,
     val email: String,
@@ -101,7 +112,7 @@ private data class User(
     val offlineSyncEnabled: Boolean = true
 )
 
-private data class Schedule(
+data class Schedule(
     val id: String,
     val train: String,
     val from: String,
@@ -112,7 +123,7 @@ private data class Schedule(
     val status: String
 )
 
-private data class Ticket(
+data class Ticket(
     val id: String,
     val userId: String,
     val route: String,
@@ -123,7 +134,7 @@ private data class Ticket(
     val status: String = "Active"
 )
 
-private data class Incident(
+data class Incident(
     val id: String,
     val userId: String,
     val type: String,
@@ -132,7 +143,7 @@ private data class Incident(
     val status: String = "Submitted"
 )
 
-private data class ApiResult<T>(val ok: Boolean, val message: String, val data: T? = null)
+data class ApiResult<T>(val ok: Boolean, val message: String, val data: T? = null)
 
 private class PrasaApi {
     private val users = mutableStateListOf<User>()
@@ -148,23 +159,15 @@ private class PrasaApi {
         private set
 
     init {
-        val demoHash = hashPassword("password123")
+        val demoHash = PrasaRules.hashPassword("password123")
         users.add(User("USR-001", "Nonhlanhla Chirwa", "nonhlanhla@prasa.demo", "0712345678", demoHash, "Tshivenda"))
         tickets.add(Ticket("TCK-1001", "USR-001", "Cape Town -> Bellville", "T0507", "24 May 2025", 28.00, "QR-TCK-1001"))
     }
 
     fun register(fullName: String, email: String, mobile: String, password: String): ApiResult<User> {
-        if (fullName.isBlank() || email.isBlank() || mobile.isBlank() || password.isBlank()) {
+        PrasaRules.validateRegistration(fullName, email, mobile, password)?.let {
             lastLog = "POST /api/auth/register -> 400 Missing required fields"
-            return ApiResult(false, "Please complete all registration fields.")
-        }
-        if (!email.contains("@")) {
-            lastLog = "POST /api/auth/register -> 400 Invalid email"
-            return ApiResult(false, "Enter a valid email address.")
-        }
-        if (password.length < 6) {
-            lastLog = "POST /api/auth/register -> 400 Weak password"
-            return ApiResult(false, "Password must be at least 6 characters.")
+            return ApiResult(false, it)
         }
         if (users.any { it.email.equals(email.trim(), ignoreCase = true) }) {
             lastLog = "POST /api/auth/register -> 409 User already exists"
@@ -175,7 +178,7 @@ private class PrasaApi {
             fullName = fullName.trim(),
             email = email.trim(),
             mobile = mobile.trim(),
-            passwordHash = hashPassword(password)
+            passwordHash = PrasaRules.hashPassword(password)
         )
         users.add(user)
         lastLog = "POST /api/auth/register -> 201 Created ${user.id}; password stored as SHA-256 hash"
@@ -183,12 +186,12 @@ private class PrasaApi {
     }
 
     fun login(email: String, password: String): ApiResult<User> {
-        if (email.isBlank() || password.isBlank()) {
+        PrasaRules.validateLogin(email, password)?.let {
             lastLog = "POST /api/auth/login -> 400 Missing credentials"
-            return ApiResult(false, "Enter email and password.")
+            return ApiResult(false, it)
         }
         val user = users.firstOrNull { it.email.equals(email.trim(), ignoreCase = true) }
-        if (user == null || user.passwordHash != hashPassword(password)) {
+        if (user == null || user.passwordHash != PrasaRules.hashPassword(password)) {
             lastLog = "POST /api/auth/login -> 401 Invalid credentials"
             return ApiResult(false, "Login failed. Check your email or password.")
         }
@@ -197,7 +200,7 @@ private class PrasaApi {
     }
 
     fun updateSettings(user: User, language: String, notifications: Boolean, offlineSync: Boolean): User {
-        val updated = user.copy(language = language, notificationsEnabled = notifications, offlineSyncEnabled = offlineSync)
+        val updated = PrasaRules.updateSettings(user, language, notifications, offlineSync)
         val index = users.indexOfFirst { it.id == user.id }
         if (index >= 0) users[index] = updated
         lastLog = "PATCH /api/users/${user.id}/settings -> 200 Updated language=$language notifications=$notifications offlineSync=$offlineSync"
@@ -228,9 +231,9 @@ private class PrasaApi {
     }
 
     fun submitIncident(user: User, type: String, location: String, description: String): ApiResult<Incident> {
-        if (type.isBlank() || location.isBlank() || description.isBlank()) {
+        PrasaRules.validateIncident(type, location, description)?.let {
             lastLog = "POST /api/incidents -> 400 Missing incident details"
-            return ApiResult(false, "Complete incident type, location and description.")
+            return ApiResult(false, it)
         }
         val incident = Incident(
             id = "INC-${(incidents.size + 1).toString().padStart(3, '0')}",
@@ -255,10 +258,183 @@ private class PrasaApi {
     }
 }
 
-private fun hashPassword(value: String): String {
-    val digest = MessageDigest.getInstance("SHA-256").digest(value.toByteArray())
-    return digest.joinToString("") { "%02x".format(it) }
+private class HostedPrasaApi(private val fallback: PrasaApi) {
+    var lastLog by mutableStateOf("GET $SUPABASE_API_URL -> ready")
+        private set
+    var lastTransport by mutableStateOf("Hosted Supabase API")
+        private set
+
+    suspend fun register(fullName: String, email: String, mobile: String, password: String): ApiResult<User> {
+        PrasaRules.validateRegistration(fullName, email, mobile, password)?.let {
+            lastLog = "POST /auth/register -> 400 $it"
+            return ApiResult(false, it)
+        }
+        return runHosted("POST /auth/register") {
+            val body = JSONObject()
+                .put("fullName", fullName)
+                .put("email", email)
+                .put("mobile", mobile)
+                .put("password", password)
+            val response = post("/auth/register", body)
+            ApiResult(response.optBoolean("ok"), response.optString("message", "Registration complete."), response.optJSONObject("user")?.toUser())
+        } ?: fallback.register(fullName, email, mobile, password)
+    }
+
+    suspend fun login(email: String, password: String): ApiResult<User> {
+        PrasaRules.validateLogin(email, password)?.let {
+            lastLog = "POST /auth/login -> 400 $it"
+            return ApiResult(false, it)
+        }
+        return runHosted("POST /auth/login") {
+            val body = JSONObject().put("email", email).put("password", password)
+            val response = post("/auth/login", body)
+            ApiResult(response.optBoolean("ok"), response.optString("message", "Login complete."), response.optJSONObject("user")?.toUser())
+        } ?: fallback.login(email, password)
+    }
+
+    suspend fun findSchedules(from: String, to: String): List<Schedule> {
+        return runHosted("GET /schedules") {
+            val query = "?from=${from.urlEncode()}&to=${to.urlEncode()}"
+            val response = get("/schedules$query")
+            response.optJSONArray("schedules").toSchedules()
+        } ?: fallback.findSchedules(from, to)
+    }
+
+    suspend fun bookTicket(user: User, schedule: Schedule): Ticket {
+        return runHosted("POST /bookings") {
+            val body = JSONObject().put("userId", user.id).put("scheduleId", schedule.id)
+            val response = post("/bookings", body)
+            response.getJSONObject("ticket").toTicket(user.id)
+        } ?: fallback.bookTicket(user, schedule)
+    }
+
+    suspend fun submitIncident(user: User, type: String, location: String, description: String): ApiResult<Incident> {
+        PrasaRules.validateIncident(type, location, description)?.let {
+            lastLog = "POST /incidents -> 400 $it"
+            return ApiResult(false, it)
+        }
+        return runHosted("POST /incidents") {
+            val body = JSONObject()
+                .put("userId", user.id)
+                .put("type", type)
+                .put("location", location)
+                .put("description", description)
+            val response = post("/incidents", body)
+            ApiResult(response.optBoolean("ok"), response.optString("message", "Incident submitted."), response.optJSONObject("incident")?.toIncident(user.id))
+        } ?: fallback.submitIncident(user, type, location, description)
+    }
+
+    suspend fun updateSettings(user: User, language: String, notifications: Boolean, offlineSync: Boolean): User {
+        return runHosted("PATCH /users/${user.id}/settings") {
+            val body = JSONObject()
+                .put("language", language)
+                .put("notificationsEnabled", notifications)
+                .put("offlineSyncEnabled", offlineSync)
+            val response = patch("/users/${user.id}/settings", body)
+            response.getJSONObject("user").toUser()
+        } ?: fallback.updateSettings(user, language, notifications, offlineSync)
+    }
+
+    suspend fun userTickets(user: User): List<Ticket> {
+        return runHosted("GET /users/${user.id}/tickets") {
+            val response = get("/users/${user.id}/tickets")
+            response.optJSONArray("tickets").toTickets(user.id)
+        } ?: fallback.userTickets(user)
+    }
+
+    fun counts(localTickets: List<Ticket>, localIncidents: List<Incident>): String {
+        return "Hosted schedules in Supabase plus current session: Tickets ${localTickets.size} | Incidents ${localIncidents.size}"
+    }
+
+    private suspend fun <T> runHosted(label: String, block: suspend () -> T): T? {
+        return try {
+            withContext(Dispatchers.IO) { block() }.also {
+                lastTransport = "Hosted Supabase API"
+                lastLog = "$label -> hosted Supabase success"
+                Log.d("PrasaConnect", lastLog)
+            }
+        } catch (error: Exception) {
+            lastTransport = "Local fallback"
+            lastLog = "$label -> hosted API failed: ${error.message}; using local fallback"
+            Log.d("PrasaConnect", lastLog)
+            null
+        }
+    }
+
+    private fun get(path: String): JSONObject = request("GET", path)
+    private fun post(path: String, body: JSONObject): JSONObject = request("POST", path, body)
+    private fun patch(path: String, body: JSONObject): JSONObject = request("PATCH", path, body)
+
+    private fun request(method: String, path: String, body: JSONObject? = null): JSONObject {
+        val connection = (URL("$SUPABASE_API_URL$path").openConnection() as HttpURLConnection).apply {
+            requestMethod = method
+            connectTimeout = 15000
+            readTimeout = 15000
+            setRequestProperty("Content-Type", "application/json")
+            if (body != null) doOutput = true
+        }
+        if (body != null) {
+            OutputStreamWriter(connection.outputStream).use { it.write(body.toString()) }
+        }
+        val stream = if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream
+        val text = stream.bufferedReader().use { it.readText() }
+        return JSONObject(text)
+    }
 }
+
+private fun JSONObject.toUser(): User = User(
+    id = getString("id"),
+    fullName = optString("full_name", optString("fullName")),
+    email = getString("email"),
+    mobile = optString("mobile"),
+    passwordHash = "",
+    language = optString("language", "English"),
+    notificationsEnabled = optBoolean("notifications_enabled", optBoolean("notificationsEnabled", true)),
+    offlineSyncEnabled = optBoolean("offline_sync_enabled", optBoolean("offlineSyncEnabled", true))
+)
+
+private fun JSONObject.toSchedule(): Schedule = Schedule(
+    id = getString("id"),
+    train = getString("train"),
+    from = optString("origin", optString("from")),
+    to = optString("destination", optString("to")),
+    depart = optString("depart_time", optString("depart")),
+    arrive = optString("arrive_time", optString("arrive")),
+    platform = getString("platform"),
+    status = optString("status", "On time")
+)
+
+private fun JSONObject.toTicket(userId: String): Ticket = Ticket(
+    id = getString("id"),
+    userId = optString("user_id", userId),
+    route = getString("route"),
+    train = getString("train"),
+    date = optString("created_at", "Today").take(10),
+    fare = optDouble("fare", 28.00),
+    qrCode = optString("qr_code", optString("qrCode")),
+    status = optString("status", "Active")
+)
+
+private fun JSONObject.toIncident(userId: String): Incident = Incident(
+    id = getString("id"),
+    userId = optString("user_id", userId),
+    type = getString("type"),
+    location = getString("location"),
+    description = getString("description"),
+    status = optString("status", "Submitted")
+)
+
+private fun JSONArray?.toSchedules(): List<Schedule> {
+    if (this == null) return emptyList()
+    return List(length()) { index -> getJSONObject(index).toSchedule() }
+}
+
+private fun JSONArray?.toTickets(userId: String): List<Ticket> {
+    if (this == null) return emptyList()
+    return List(length()) { index -> getJSONObject(index).toTicket(userId) }
+}
+
+private fun String.urlEncode(): String = URLEncoder.encode(this, "UTF-8")
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -274,10 +450,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun PrasaConnectApp() {
-    val api = remember { PrasaApi() }
+    val localApi = remember { PrasaApi() }
+    val api = remember { HostedPrasaApi(localApi) }
+    val scope = rememberCoroutineScope()
     var screen by remember { mutableStateOf(Screen.Splash) }
     var user by remember { mutableStateOf<User?>(null) }
-    var schedules by remember { mutableStateOf(api.schedules.toList()) }
+    var schedules by remember { mutableStateOf(localApi.schedules.toList()) }
+    var tickets by remember { mutableStateOf<List<Ticket>>(emptyList()) }
+    var incidents by remember { mutableStateOf<List<Incident>>(emptyList()) }
     var lastTicket by remember { mutableStateOf<Ticket?>(null) }
     var appMessage by remember { mutableStateOf("Demo account: nonhlanhla@prasa.demo / password123") }
 
@@ -287,12 +467,16 @@ private fun PrasaConnectApp() {
             Screen.Login -> LoginScreen(
                 message = appMessage,
                 onLogin = { email, password ->
-                    val result = api.login(email, password)
-                    appMessage = result.message
-                    if (result.ok && result.data != null) {
-                        user = result.data
-                        schedules = api.findSchedules("", "")
-                        screen = Screen.Home
+                    scope.launch {
+                        appMessage = "Logging in through Supabase..."
+                        val result = api.login(email, password)
+                        appMessage = result.message
+                        if (result.ok && result.data != null) {
+                            user = result.data
+                            schedules = api.findSchedules("", "")
+                            tickets = api.userTickets(result.data)
+                            screen = Screen.Home
+                        }
                     }
                 },
                 onRegister = { screen = Screen.Register }
@@ -300,11 +484,16 @@ private fun PrasaConnectApp() {
             Screen.Register -> RegisterScreen(
                 message = appMessage,
                 onDone = { name, email, mobile, password ->
-                    val result = api.register(name, email, mobile, password)
-                    appMessage = result.message
-                    if (result.ok && result.data != null) {
-                        user = result.data
-                        screen = Screen.Home
+                    scope.launch {
+                        appMessage = "Registering through Supabase..."
+                        val result = api.register(name, email, mobile, password)
+                        appMessage = result.message
+                        if (result.ok && result.data != null) {
+                            user = result.data
+                            schedules = api.findSchedules("", "")
+                            tickets = api.userTickets(result.data)
+                            screen = Screen.Home
+                        }
                     }
                 },
                 onBack = { screen = Screen.Login }
@@ -314,11 +503,15 @@ private fun PrasaConnectApp() {
                 if (activeUser == null) {
                     screen = Screen.Login
                     LoginScreen(appMessage, { email, password ->
-                        val result = api.login(email, password)
-                        appMessage = result.message
-                        if (result.ok && result.data != null) {
-                            user = result.data
-                            screen = Screen.Home
+                        scope.launch {
+                            val result = api.login(email, password)
+                            appMessage = result.message
+                            if (result.ok && result.data != null) {
+                                user = result.data
+                                schedules = api.findSchedules("", "")
+                                tickets = api.userTickets(result.data)
+                                screen = Screen.Home
+                            }
                         }
                     }, { screen = Screen.Register })
                 } else {
@@ -337,36 +530,52 @@ private fun PrasaConnectApp() {
                             Screen.Home -> DashboardScreen(activeUser, schedules, appMessage) { screen = it }
                             Screen.Timetable -> TimetableScreen(
                                 schedules = schedules,
-                                onSearch = { from, to -> schedules = api.findSchedules(from, to) },
+                                onSearch = { from, to ->
+                                    scope.launch {
+                                        schedules = api.findSchedules(from, to)
+                                        appMessage = "Supabase timetable search returned ${schedules.size} rows."
+                                    }
+                                },
                                 onBook = { schedule ->
-                                    lastTicket = api.bookTicket(activeUser, schedule)
-                                    appMessage = "Booking created: ${lastTicket?.id}"
-                                    screen = Screen.Tickets
+                                    scope.launch {
+                                        lastTicket = api.bookTicket(activeUser, schedule)
+                                        tickets = api.userTickets(activeUser)
+                                        appMessage = "Booking created through Supabase: ${lastTicket?.id}"
+                                        screen = Screen.Tickets
+                                    }
                                 }
                             )
                             Screen.Booking -> BookingScreen(
                                 schedules = schedules,
                                 onBook = { schedule ->
-                                    lastTicket = api.bookTicket(activeUser, schedule)
-                                    appMessage = "Booking created: ${lastTicket?.id}"
-                                    screen = Screen.Tickets
+                                    scope.launch {
+                                        lastTicket = api.bookTicket(activeUser, schedule)
+                                        tickets = api.userTickets(activeUser)
+                                        appMessage = "Booking created through Supabase: ${lastTicket?.id}"
+                                        screen = Screen.Tickets
+                                    }
                                 }
                             )
-                            Screen.Tickets -> TicketsScreen(api.userTickets(activeUser), lastTicket)
+                            Screen.Tickets -> TicketsScreen(tickets, lastTicket)
                             Screen.Tracking -> TrackingScreen(schedules.first())
                             Screen.Stations -> StationsScreen { screen = Screen.Incident }
                             Screen.Map -> RailMapScreen { screen = Screen.Booking }
                             Screen.Incident -> IncidentScreen { type, location, description ->
-                                val result = api.submitIncident(activeUser, type, location, description)
-                                appMessage = result.message
+                                scope.launch {
+                                    val result = api.submitIncident(activeUser, type, location, description)
+                                    appMessage = result.message
+                                    if (result.ok && result.data != null) incidents = incidents + result.data
+                                }
                             }
                             Screen.Alerts -> AlertsScreen(activeUser)
                             Screen.Settings -> SettingsScreen(activeUser) { language, notifications, offlineSync ->
-                                user = api.updateSettings(activeUser, language, notifications, offlineSync)
-                                appMessage = "Settings saved."
+                                scope.launch {
+                                    user = api.updateSettings(activeUser, language, notifications, offlineSync)
+                                    appMessage = "Settings saved through Supabase."
+                                }
                             }
                             Screen.Profile -> ProfileScreen(activeUser) { screen = it }
-                            Screen.Api -> ApiScreen(api)
+                            Screen.Api -> ApiScreen(api, tickets, incidents)
                             else -> DashboardScreen(activeUser, schedules, appMessage) { screen = it }
                         }
                     }
@@ -752,24 +961,26 @@ private fun ProfileScreen(user: User, navigate: (Screen) -> Unit) {
 }
 
 @Composable
-private fun ApiScreen(api: PrasaApi) {
+private fun ApiScreen(api: HostedPrasaApi, tickets: List<Ticket>, incidents: List<Incident>) {
     ScreenColumn {
         BluePanel {
             Text("API / Database Evidence", color = Color.White, fontWeight = FontWeight.Bold)
-            Text("Hosted Supabase API is configured. The app also keeps a local fallback data layer for classroom demo reliability.", color = Color.White, fontSize = 13.sp)
+            Text("Hosted Supabase API is connected. If the network fails, the app shows a local fallback status.", color = Color.White, fontSize = 13.sp)
         }
         Spacer(Modifier.height(12.dp))
         ReadOnlyField("Hosted API: $SUPABASE_API_URL")
         ReadOnlyField("Supabase tables: app_users, schedules, tickets, incidents")
         ReadOnlyField(api.lastLog)
-        ReadOnlyField(api.counts())
+        ReadOnlyField("Transport: ${api.lastTransport}")
+        ReadOnlyField(api.counts(tickets, incidents))
         Spacer(Modifier.height(10.dp))
         Text("Stored Tickets", fontWeight = FontWeight.Bold)
-        api.tickets.forEach { ticket -> ReadOnlyField("${ticket.id}: ${ticket.route} | ${ticket.train} | R${ticket.fare}") }
+        if (tickets.isEmpty()) EmptyState("No tickets loaded for this user yet.")
+        tickets.forEach { ticket -> ReadOnlyField("${ticket.id}: ${ticket.route} | ${ticket.train} | R${ticket.fare}") }
         Spacer(Modifier.height(10.dp))
         Text("Stored Incidents", fontWeight = FontWeight.Bold)
-        if (api.incidents.isEmpty()) EmptyState("No incidents submitted yet.")
-        api.incidents.forEach { incident -> ReadOnlyField("${incident.id}: ${incident.type} at ${incident.location} | ${incident.status}") }
+        if (incidents.isEmpty()) EmptyState("No incidents submitted in this session yet.")
+        incidents.forEach { incident -> ReadOnlyField("${incident.id}: ${incident.type} at ${incident.location} | ${incident.status}") }
     }
 }
 

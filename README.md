@@ -29,7 +29,7 @@ You can also create a new user with the Register screen.
 - Incident report submission.
 - Settings for language, notifications and offline sync.
 - Alerts screen.
-- API/Data evidence screen.
+- API/Data evidence screen with hosted Supabase request status.
 - PRASA Gauteng RailMap screen.
 
 ## Supabase API and Database
@@ -60,7 +60,7 @@ API routes:
 - `POST /incidents`
 - `PATCH /users/{userId}/settings`
 
-The Android app displays the hosted API URL and table names on the API/Data screen. It also keeps a local fallback data layer so the classroom demo still works if the network is unavailable.
+The Android app calls the hosted Supabase Edge Function for login, registration, timetable search, bookings, tickets, incident reports and settings updates. It also keeps a local fallback data layer so the classroom demo still works if the network is unavailable.
 
 ## GitHub Actions
 
@@ -91,13 +91,13 @@ For the Supabase deployment workflow, add these GitHub repository secrets:
 
 1. Show Supabase project tables.
 2. Open the hosted API URL in a browser.
-3. Register a user in the app.
+3. Register a user in the app and show the Supabase response status.
 4. Log out.
 5. Log in.
 6. Search timetable data.
 7. Make a booking.
-8. Show the generated ticket.
-9. Submit an incident report.
+8. Show the generated ticket from the hosted API.
+9. Submit an incident report through the hosted API.
 10. Open Settings and save changes.
 11. Open API/Data screen.
 12. Show GitHub Actions workflow files.
