@@ -83,4 +83,16 @@ class RepositoryTest {
         } catch(e:ApiFailure) { assertEquals(400,e.status) }
         assertTrue(repository.local.pending(owner).isEmpty())
     }
+
+    @Test fun oldRepositoryCannotSendRequestsUnderAnotherAccount() = runBlocking {
+        SessionStore(context).save(JSONObject(session()))
+        val repository=PrasaRepository(context,client)
+        val other=JSONObject(session()).put("user",JSONObject().put("id",UUID.randomUUID().toString()))
+        SessionStore(context).save(other)
+        try {
+            repository.rows("/tickets")
+            fail("Expected account-change rejection")
+        } catch(e:ApiFailure) { assertEquals(401,e.status) }
+        assertTrue(requests.isEmpty())
+    }
 }

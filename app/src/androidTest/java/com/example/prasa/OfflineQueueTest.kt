@@ -7,6 +7,20 @@ import org.junit.Test
 import java.util.UUID
 
 class OfflineQueueTest {
+    @Test fun favoriteRoutesPersistDeduplicateAndRespectOwner() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val owner=UUID.randomUUID().toString()
+        LocalStore(context).use {
+            it.saveRoute(owner,"Cape Town","Bellville")
+            it.saveRoute(owner,"Cape Town","Bellville")
+        }
+        LocalStore(context).use {
+            assertEquals(listOf("Cape Town" to "Bellville"),it.routes(owner))
+            assertTrue(it.routes(UUID.randomUUID().toString()).isEmpty())
+            it.removeRoute(owner,"Cape Town","Bellville")
+            assertTrue(it.routes(owner).isEmpty())
+        }
+    }
     @Test fun queueSurvivesReopenAndIsAccountScoped() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val owner = UUID.randomUUID().toString()

@@ -9,6 +9,8 @@ object Labels {
         "settings" to ("Settings" to "Instellings"), "report" to ("Report incident" to "Rapporteer voorval"),
         "reports" to ("My reports" to "My verslae"), "stations" to ("Stations" to "Stasies"),
         "map" to ("Rail map" to "Spoorkaart"), "alerts" to ("Service alerts" to "Dienskennisgewings"),
+        "favorites" to ("Favourite routes" to "Gunstelingroetes"),
+        "favorite" to ("Save route" to "Stoor roete"), "remove" to ("Remove" to "Verwyder"),
         "welcome" to ("Your journey. Connected." to "Jou reis. Verbind."),
         "sample" to ("Sample schedules. Confirm travel times with PRASA." to "Voorbeeldroosters. Bevestig reistye by PRASA."),
         "cached" to ("Offline: saved information" to "Vanlyn: gestoorde inligting"),

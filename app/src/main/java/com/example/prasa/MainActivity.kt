@@ -164,7 +164,7 @@ private fun PrasaApp(callback: Uri?, consumed: () -> Unit) {
                 "home" -> {
                     Text(tr("welcome"),style=MaterialTheme.typography.headlineSmall)
                     Text(tr("sample"))
-                    listOf("timetable","tickets","report","reports","stations","map","alerts","settings").forEach { key ->
+                    listOf("timetable","tickets","favorites","report","reports","stations","map","alerts","settings").forEach { key ->
                         OutlinedButton(onClick={navigate(key)},modifier=Modifier.fillMaxWidth()) { Text(tr(key)) }
                     }
                     Text("${tr("pending")}: ${repo.local.pending(repo.userId).size}")
@@ -182,7 +182,24 @@ private fun PrasaApp(callback: Uri?, consumed: () -> Unit) {
                             Text("${schedule.optString("depart_time")} – ${schedule.optString("arrive_time")} · ${schedule.optString("train")}")
                             Text("${tr("platform")}: ${schedule.optString("platform")}")
                             Button(enabled=!busy && !offline,onClick={ selected=schedule; requestId=UUID.randomUUID().toString(); navigate("confirm") }) { Text(tr("book")) }
+                            OutlinedButton(enabled=!busy,onClick={action {
+                                repo.local.saveRoute(repo.userId,schedule.getString("origin"),schedule.getString("destination"))
+                                message=tr("saved")
+                            }}) { Text(tr("favorite")) }
                         }}
+                    }
+                }
+                "favorites" -> {
+                    val favorites=repo.local.routes(repo.userId)
+                    if(favorites.isEmpty()) Text(tr("empty"))
+                    favorites.forEach { (origin,destination) ->
+                        Text("$origin → $destination",style=MaterialTheme.typography.titleMedium)
+                        Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                            Button(onClick={from=origin; to=destination; navigate("timetable")}) { Text(tr("search")) }
+                            TextButton(enabled=!busy,onClick={action {
+                                repo.local.removeRoute(repo.userId,origin,destination)
+                            }}) { Text(tr("remove")) }
+                        }
                     }
                 }
                 "confirm" -> {
