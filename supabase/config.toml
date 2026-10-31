@@ -1,0 +1,7 @@
+project_id = "prasa-connect"
+
+# Each function explicitly verifies caller identity with Supabase Auth.
+[functions.prasa-api]
+verify_jwt = false
+[functions.send-alert]
+verify_jwt = false

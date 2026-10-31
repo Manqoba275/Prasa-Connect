@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+**/build/
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+**/service-account*.json
+supabase/.temp/

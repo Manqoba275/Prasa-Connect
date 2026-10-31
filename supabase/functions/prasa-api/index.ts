@@ -1,166 +1,65 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
+const headers = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,OPTIONS" };
+const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
-};
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-);
-
-async function hashPassword(password: string): Promise<string> {
-  const data = new TextEncoder().encode(password);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function readBody(req: Request) {
+// User-scoped clients enforce RLS. Never trust userId from a request body.
+// Reference: https://supabase.com/docs/guides/functions/auth
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers });
+  const url = new URL(req.url), path = url.pathname.split("prasa-api")[1] || "/";
+  if (path === "/" && req.method === "GET") return reply({ service: "PRASA Connect", version: 2 });
+  const authorization = req.headers.get("Authorization") || "";
+  if (!authorization.startsWith("Bearer ")) return reply({ message: "Sign in required" }, 401);
+  const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authorization } }, auth: { persistSession: false } });
+  const { data: { user }, error: authError } = await db.auth.getUser(authorization.slice(7));
+  if (authError || !user) return reply({ message: "Session expired. Sign in again." }, 401);
   try {
-    return await req.json();
-  } catch (_error) {
-    return {};
-  }
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-
-  const url = new URL(req.url);
-  const path = url.pathname.replace(/^\/prasa-api/, "");
-
-  try {
-    if (req.method === "GET" && (path === "/" || path === "")) {
-      return json({ ok: true, service: "PRASA Connect API", status: "online" });
-    }
-
-    if (req.method === "POST" && path === "/auth/register") {
-      const body = await readBody(req);
-      const { fullName, email, mobile, password } = body;
-      if (!fullName || !email || !mobile || !password) return json({ ok: false, message: "All fields are required" }, 400);
-      if (String(password).length < 6) return json({ ok: false, message: "Password must be at least 6 characters" }, 400);
-
-      const passwordHash = await hashPassword(String(password));
-      const { data, error } = await supabase
-        .from("app_users")
-        .insert({ full_name: fullName, email: String(email).toLowerCase(), mobile, password_hash: passwordHash })
-        .select("id, full_name, email, mobile, language, notifications_enabled, offline_sync_enabled, created_at")
-        .single();
-
-      if (error) return json({ ok: false, message: error.message }, error.code === "23505" ? 409 : 500);
-      return json({ ok: true, user: data }, 201);
-    }
-
-    if (req.method === "POST" && path === "/auth/login") {
-      const body = await readBody(req);
-      const { email, password } = body;
-      if (!email || !password) return json({ ok: false, message: "Email and password are required" }, 400);
-
-      const { data, error } = await supabase
-        .from("app_users")
-        .select("*")
-        .eq("email", String(email).toLowerCase())
-        .maybeSingle();
-
-      if (error) return json({ ok: false, message: error.message }, 500);
-      if (!data || data.password_hash !== await hashPassword(String(password))) {
-        return json({ ok: false, message: "Invalid email or password" }, 401);
-      }
-
-      delete data.password_hash;
-      return json({ ok: true, user: data });
-    }
-
+    let result;
     if (req.method === "GET" && path === "/schedules") {
-      const from = url.searchParams.get("from") ?? "";
-      const to = url.searchParams.get("to") ?? "";
-      let query = supabase.from("schedules").select("*").order("depart_time", { ascending: true });
-      if (from) query = query.ilike("origin", `%${from}%`);
-      if (to) query = query.ilike("destination", `%${to}%`);
-
-      const { data, error } = await query;
-      if (error) return json({ ok: false, message: error.message }, 500);
-      return json({ ok: true, schedules: data });
+      let query = db.from("schedules").select("*").order("depart_time");
+      const from = url.searchParams.get("from"), to = url.searchParams.get("to");
+      if (from) query = query.ilike("origin", from.replace(/[%_]/g, ""));
+      if (to) query = query.ilike("destination", to.replace(/[%_]/g, ""));
+      result = await query;
+    } else if (req.method === "GET" && path === "/tickets") {
+      result = await db.from("bookings").select("*").order("created_at", { ascending: false });
+    } else if (req.method === "POST" && path === "/bookings") {
+      const body = await req.json();
+      result = await db.rpc("book_journey", { p_schedule: body.scheduleId, p_request: body.requestId });
+    } else if (req.method === "POST" && path === "/incidents") {
+      const body = await req.json();
+      result = await db.from("reports").insert({ id: body.id, user_id: user.id,
+        type: body.type, location: body.location, description: body.description }).select().single();
+      if (result.error?.code === "23505") result = await db.from("reports").select().eq("id", body.id).single();
+    } else if (req.method === "GET" && path === "/incidents") {
+      result = await db.from("reports").select().order("created_at", { ascending: false });
+    } else if (req.method === "GET" && path === "/alerts") {
+      result = await db.from("service_alerts").select().order("created_at", { ascending: false });
+    } else if (req.method === "POST" && path === "/devices") {
+      const body = await req.json();
+      if (typeof body.token !== "string" || body.token.length < 20 || body.token.length > 4096)
+        return reply({ message: "Invalid device token" }, 400);
+      result = await db.from("device_tokens").upsert({ user_id: user.id, token: body.token });
+    } else if (req.method === "DELETE" && path === "/devices") {
+      result = await db.from("device_tokens").delete().eq("user_id", user.id);
+    } else if (req.method === "GET" && path === "/profile") {
+      result = await db.from("profiles").select().eq("id", user.id).maybeSingle();
+    } else if (req.method === "PATCH" && path === "/profile") {
+      const b = await req.json();
+      if (!["en", "zu", "af"].includes(b.language) || typeof b.notifications_enabled !== "boolean" ||
+          typeof b.offline_sync_enabled !== "boolean") return reply({ message: "Invalid settings" }, 400);
+      result = await db.from("profiles").upsert({ id: user.id, full_name: String(b.full_name || "").slice(0,120),
+        mobile: String(b.mobile || "").slice(0,30), language: b.language,
+        notifications_enabled: b.notifications_enabled, offline_sync_enabled: b.offline_sync_enabled }).select().single();
+    } else return reply({ message: "Route not found" }, 404);
+    if (result.error) {
+      console.error("Database request failed", result.error.code);
+      return reply({ message: "Unable to complete request. Check your input and retry." }, 400);
     }
-
-    if (req.method === "POST" && path === "/bookings") {
-      const body = await readBody(req);
-      const { userId, scheduleId } = body;
-      if (!userId || !scheduleId) return json({ ok: false, message: "userId and scheduleId are required" }, 400);
-
-      const { data: schedule, error: scheduleError } = await supabase
-        .from("schedules")
-        .select("*")
-        .eq("id", scheduleId)
-        .single();
-      if (scheduleError || !schedule) return json({ ok: false, message: "Schedule not found" }, 404);
-
-      const { data, error } = await supabase
-        .from("tickets")
-        .insert({
-          user_id: userId,
-          schedule_id: scheduleId,
-          route: `${schedule.origin} -> ${schedule.destination}`,
-          train: schedule.train,
-          fare: 28.00,
-          qr_code: `QR-${schedule.train}-${Date.now()}`,
-        })
-        .select("*")
-        .single();
-
-      if (error) return json({ ok: false, message: error.message }, 500);
-      return json({ ok: true, ticket: data }, 201);
-    }
-
-    const ticketMatch = path.match(/^\/users\/([^/]+)\/tickets$/);
-    if (req.method === "GET" && ticketMatch) {
-      const { data, error } = await supabase
-        .from("tickets")
-        .select("*")
-        .eq("user_id", ticketMatch[1])
-        .order("created_at", { ascending: false });
-      if (error) return json({ ok: false, message: error.message }, 500);
-      return json({ ok: true, tickets: data });
-    }
-
-    if (req.method === "POST" && path === "/incidents") {
-      const body = await readBody(req);
-      const { userId, type, location, description } = body;
-      if (!userId || !type || !location || !description) return json({ ok: false, message: "Missing incident details" }, 400);
-
-      const { data, error } = await supabase
-        .from("incidents")
-        .insert({ user_id: userId, type, location, description })
-        .select("*")
-        .single();
-      if (error) return json({ ok: false, message: error.message }, 500);
-      return json({ ok: true, incident: data }, 201);
-    }
-
-    const settingsMatch = path.match(/^\/users\/([^/]+)\/settings$/);
-    if (req.method === "PATCH" && settingsMatch) {
-      const body = await readBody(req);
-      const { language, notificationsEnabled, offlineSyncEnabled } = body;
-      const { data, error } = await supabase
-        .from("app_users")
-        .update({ language, notifications_enabled: notificationsEnabled, offline_sync_enabled: offlineSyncEnabled })
-        .eq("id", settingsMatch[1])
-        .select("id, full_name, email, mobile, language, notifications_enabled, offline_sync_enabled, created_at")
-        .single();
-      if (error) return json({ ok: false, message: error.message }, 500);
-      return json({ ok: true, user: data });
-    }
-
-    return json({ ok: false, message: "Route not found" }, 404);
-  } catch (error) {
-    return json({ ok: false, message: error instanceof Error ? error.message : String(error) }, 500);
+    return reply({ data: result.data });
+  } catch {
+    return reply({ message: "Invalid request or temporarily unavailable service" }, 400);
   }
 });
