@@ -26,7 +26,7 @@ supabase functions deploy send-alert --no-verify-jwt
 
 `--no-verify-jwt` disables the gateway check only. Both functions verify bearer access tokens using Supabase Auth. The app API uses user-scoped clients/RLS; only the allowlisted alert sender uses the service role after authorization. Test missing/invalid credentials before release.
 
-The old security migration references `public.rls_auto_enable()`, a project-specific function. On a fresh project verify whether it exists before applying that historical migration; do not invent the function or skip unrelated security SQL. Resolve this baseline difference before using the deploy workflow.
+The old security migrations reference `public.rls_auto_enable()`, a project-specific function. They now guard the revocation with an existence check for fresh installations; existing projects retain the same revocation behaviour. Already-applied migrations are not automatically re-run. Still compare the remote baseline/history before using the deploy workflow; these guards do not reconcile mismatched migration IDs.
 
 ## 2. Email/password authentication
 
@@ -70,7 +70,7 @@ Repository Settings > Secrets and variables > Actions:
 
 Grant the Supabase token only the database/migration and edge-function deployment access needed for this project; do not select organisation-wide full access. Create a GitHub `production` environment with required reviewers. Database deployment is manual, with an explicit migration-history confirmation; normal pushes run Android and edge-function checks only.
 
-Commit/push the reviewed source using your normal Git workflow. Inspect Android verification, offline-storage-test and Edge function type checks. Download APK and test-report artifacts. A workflow file in the repository is not evidence of a successful run. No commit/push or successful run has been verified in this session.
+Inspect Android verification, offline-storage-test and Edge function type checks. Download APK and test-report artifacts. A workflow file in the repository is not evidence of a successful run. Source changes are being pushed to `codex/part2-part3-integration`; see VERIFICATION.md for actual results rather than assuming deployment follows a push.
 
 ## References
 

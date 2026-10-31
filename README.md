@@ -1,8 +1,8 @@
 # PRASA Connect - OPSC6312 POE
 
-Tagline: Your journey. Connected.
+An academic Android rail application using Kotlin/Compose, Supabase Auth, an authenticated REST API and PostgreSQL. The source includes timetable search, bookings with QR codes, saved favourite routes, incidents, offline report sync, settings, Google SSO wiring, FCM notification wiring and the official Gauteng rail map.
 
-PRASA Connect is an Android app for PRASA commuters. It supports registration, login/logout, train timetable searching, bookings, QR-style tickets, station information, incident reporting, settings, alerts and PRASA rail map access.
+**Not an official PRASA product.** Seed schedules and fares are illustrative. Bookings are persisted academic records, not valid travel tickets. No payment or live train-tracking service is integrated.
 
 ## Group 10
 
@@ -10,94 +10,53 @@ PRASA Connect is an Android app for PRASA commuters. It supports registration, l
 - Nonhlanhla Chirwa (ST10451192)
 - Ramudzuli Nyito (ST10450776)
 
-## Demo Login
+## Submission status
 
-- Email: `nonhlanhla@prasa.demo`
-- Password: `password123`
+See [Part 2 / Part 3 audit](docs/PART2_PART3_AUDIT.md) for each requirement, remaining evidence and acceptance tests. Source changes alone do not prove deployment or rubric completion. There is no hardcoded demo login; register a real test account and confirm its email.
 
-You can also create a new user with the Register screen.
+- [Deployment and secrets](docs/DEPLOYMENT.md)
+- [Publication and signing checklist](docs/PUBLICATION.md)
+- [Release notes](docs/RELEASE_NOTES.md)
+- [AI assistance statement](docs/AI_USE.md)
+- [Verification results](docs/VERIFICATION.md)
 
-## Implemented App Features
+## Architecture and design
 
-- Register with validation.
-- Login with validation.
-- Logout from the top bar.
-- Password hashing in the app data layer.
-- Timetable search.
-- Ticket booking from train schedules.
-- QR-style ticket display.
-- Incident report submission.
-- Settings for language, notifications and offline sync.
-- Alerts screen.
-- API/Data evidence screen.
-- PRASA Gauteng RailMap screen.
+Compose screens call PrasaRepository over HTTPS with OkHttp. Password handling belongs to Supabase Auth, not a custom password table. Android stores session credentials encrypted with an Android Keystore key and refreshes expiring sessions.
 
-## Supabase API and Database
+The prasa-api edge function validates the user access token and queries with that user's permissions. PostgreSQL RLS isolates profiles, bookings, reports and device tokens. Booking fare and ownership are server-controlled; request IDs prevent duplicate bookings on retries. Legacy demo tables are preserved but not exposed to authenticated clients.
 
-Supabase project: `Prasa-Connect`
+SQLite stores account-partitioned cached reads and an incident outbox. Network failures can queue an incident; API validation/authentication failures cannot be disguised as offline success. WorkManager retries when connected, and stable report IDs make replays idempotent. Booking creation requires connectivity.
 
-Hosted API:
+Google SSO uses a browser PKCE flow and registered deep link. Firebase configuration is external; a privileged, allowlisted send-alert function sends generic service alerts through FCM. English/Afrikaans labels cover the main interface; translations and all device workflows require review.
 
-```text
-https://awbgflgcqjofsnagkzou.supabase.co/functions/v1/prasa-api
-```
+## Backend contract
 
-Database tables:
+Configured project: awbgflgcqjofsnagkzou. New source must be deployed before the updated Android client can use it.
 
-- `app_users`
-- `schedules`
-- `tickets`
-- `incidents`
+- Auth: Supabase /auth/v1/signup, password/refresh/PKCE token exchanges, logout.
+- Public GET /functions/v1/prasa-api/ returns health information only.
+- Authenticated API: GET /schedules, GET /tickets, POST /bookings, GET/POST /incidents, GET/PATCH /profile, GET /alerts, POST/DELETE /devices.
+- Administrator-only POST /functions/v1/send-alert.
+- New tables: profiles, bookings, reports, service_alerts, device_tokens; schedules retained.
 
-API routes:
+No privileged credentials belong in Android source. Review migration history before deploying: old remote timestamps may differ from local baseline files.
 
-- `GET /`
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /schedules?from=Cape Town&to=Bellville`
-- `POST /bookings`
-- `GET /users/{userId}/tickets`
-- `POST /incidents`
-- `PATCH /users/{userId}/settings`
+## Build and test
 
-The Android app displays the hosted API URL and table names on the API/Data screen. It also keeps a local fallback data layer so the classroom demo still works if the network is unavailable.
-
-## GitHub Actions
-
-Included workflows:
-
-- `.github/workflows/android-build.yml` builds the Android app and runs unit tests.
-- `.github/workflows/supabase-deploy.yml` deploys Supabase migrations and the Edge Function.
-
-For the Supabase deployment workflow, add these GitHub repository secrets:
-
-- `SUPABASE_ACCESS_TOKEN`
-- `SUPABASE_DB_PASSWORD`
-
-## Running the Project
-
-1. Open the project in Android Studio.
-2. Let Gradle sync.
-3. Run the app on an emulator or physical Android device.
-4. Use the demo login or register a new user.
-
-## Local Validation
+Open in Android Studio with JDK 21 and Android SDK 36.1. Configure the provider details in DEPLOYMENT.md. Run:
 
 ```powershell
-.\gradlew.bat assembleDebug --no-daemon --console=plain
+.\gradlew.bat :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon
+.\gradlew.bat :app:connectedDebugAndroidTest --no-daemon
 ```
 
-## Recommended Demo Video Path
+The second command requires an emulator/device. Unit tests cover validation and language selection; instrumentation tests cover durable account-isolated offline records and intercepted HTTP authentication, refresh, logout and rejection paths. Manual two-user API/security and provider integration tests are still required.
 
-1. Show Supabase project tables.
-2. Open the hosted API URL in a browser.
-3. Register a user in the app.
-4. Log out.
-5. Log in.
-6. Search timetable data.
-7. Make a booking.
-8. Show the generated ticket.
-9. Submit an incident report.
-10. Open Settings and save changes.
-11. Open API/Data screen.
-12. Show GitHub Actions workflow files.
+GitHub Actions builds, runs unit tests/lint, runs emulator tests and uploads reports/APKs. A separate workflow type-checks the edge functions. Production deployment is manual and gated on a reviewed migration history. Configure the production environment's reviewers and secrets before use.
+
+## References and evidence
+
+Official documentation links are in DEPLOYMENT.md. The supplied PRASA logo and Gauteng map are reference assets, not evidence of affiliation. Map source: https://www.prasa.com/admin/wp-content/uploads/2024/12/RailMap-Gauteng.png
+
+Use actual build results, CI run links and physical-device screenshots for submission. Older design PDFs and screenshots describe earlier work and must not be presented as evidence that the new integration has been verified.
