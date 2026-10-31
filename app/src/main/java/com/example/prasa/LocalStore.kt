@@ -15,7 +15,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 // Offline records are partitioned by account; logout cannot expose another user's cache.
-class LocalStore(context: Context) : SQLiteOpenHelper(context, "prasa.db", null, 2) {
+class LocalStore(context: Context) : SQLiteOpenHelper(context, "prasa.db", null, 2), java.io.Closeable {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("CREATE TABLE cache (owner TEXT, name TEXT, body TEXT, PRIMARY KEY(owner,name))")
         db.execSQL("CREATE TABLE outbox (id TEXT PRIMARY KEY, owner TEXT NOT NULL, body TEXT NOT NULL)")
