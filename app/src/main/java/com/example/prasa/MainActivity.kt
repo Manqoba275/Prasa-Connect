@@ -80,6 +80,7 @@ private fun PrasaApp(callback: Uri?, consumed: () -> Unit) {
     var profile by remember { mutableStateOf(JSONObject()) }
     var selected by remember { mutableStateOf<JSONObject?>(null) }
     var requestId by remember { mutableStateOf(UUID.randomUUID().toString()) }
+    var routeRevision by remember { mutableIntStateOf(0) }
     var from by remember { mutableStateOf("") }
     var to by remember { mutableStateOf("") }
 
@@ -184,13 +185,14 @@ private fun PrasaApp(callback: Uri?, consumed: () -> Unit) {
                             Button(enabled=!busy && !offline,onClick={ selected=schedule; requestId=UUID.randomUUID().toString(); navigate("confirm") }) { Text(tr("book")) }
                             OutlinedButton(enabled=!busy,onClick={action {
                                 repo.local.saveRoute(repo.userId,schedule.getString("origin"),schedule.getString("destination"))
+                                routeRevision++
                                 message=tr("saved")
                             }}) { Text(tr("favorite")) }
                         }}
                     }
                 }
                 "favorites" -> {
-                    val favorites=repo.local.routes(repo.userId)
+                    val favorites=remember(repo.userId,routeRevision) { repo.local.routes(repo.userId) }
                     if(favorites.isEmpty()) Text(tr("empty"))
                     favorites.forEach { (origin,destination) ->
                         Text("$origin → $destination",style=MaterialTheme.typography.titleMedium)
@@ -198,6 +200,7 @@ private fun PrasaApp(callback: Uri?, consumed: () -> Unit) {
                             Button(onClick={from=origin; to=destination; navigate("timetable")}) { Text(tr("search")) }
                             TextButton(enabled=!busy,onClick={action {
                                 repo.local.removeRoute(repo.userId,origin,destination)
+                                routeRevision++
                             }}) { Text(tr("remove")) }
                         }
                     }
