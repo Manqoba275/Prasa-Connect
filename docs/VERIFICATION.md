@@ -9,11 +9,13 @@ Date: 31 October 2026. This records observed checks, not a claim of complete POE
 - Android debug compilation, unit tests, lint and APK packaging: passed locally. Lint reported zero errors, 42 warnings and one hint; warnings include dependency-version suggestions, API/style suggestions and launcher/bitmap guidance.
 - Instrumentation APK compilation/packaging: passed locally.
 - [GitHub Android verification at 0d68819](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41175798701): build and emulator-test jobs both passed. This covers the Auth/offline integration before the subsequent favourites/account-switch additions.
-- Unit suite: five tests (four validation/language tests plus the existing arithmetic test), zero failures.
+- Final unit suite: 11 tests (seven PrasaRules tests and four validation/language tests), zero failures. The obsolete arithmetic example was removed on main and that removal is preserved.
 
 ## Final revision
 
-The favourites/account-switch revision 6d3f042 passed its [Android workflow](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41176187042), including eight Android 15 instrumentation tests. A subsequent local Android 7 run exposed two SQLite test failures because the older SQLiteOpenHelper did not implement AutoCloseable. The explicit Closeable fix in b338e2d passed the [expanded CI matrix](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41196517589): build plus API 24 and API 35 emulator jobs all succeeded. The later main-branch reconciliation should be checked against its own run, not attributed to this older run.
+**Verified source revision: d79be22.** Its [pull-request verification run](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41197041394) passed all three jobs: build/lint/unit tests, eight instrumentation tests on API 24, and eight on API 35. Its [edge-function checks](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41197041415) also passed. Local unit reports independently record 11 tests with zero failures/errors. These results verify source/build behaviour, not live provider configuration or database deployment.
+
+Earlier verification history: revision 6d3f042 passed its [Android workflow](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41176187042), including eight Android 15 instrumentation tests. A local Android 7 run then exposed two SQLite test failures because the older SQLiteOpenHelper did not implement AutoCloseable. The explicit Closeable fix in b338e2d passed the [expanded CI matrix](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41196517589). The final merged revision is verified separately above.
 
 HTTP tests intercept responses locally. They test client behaviour, not a deployed Supabase instance. SQLite tests verify queue/favourite persistence and account isolation. Local emulator runs were initially constrained by host memory; after running build and emulator sequentially, the login/registration screens were exercised and captured in evidence/. The failed pre-fix local storage tests and the successful post-fix CI tests are distinct evidence.
 

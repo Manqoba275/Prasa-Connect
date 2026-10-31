@@ -40,7 +40,7 @@ Audit date: 31 October 2026. Source: OPSC POE.pdf, Part 2 requirements/rubric pp
 - Blob upload and NoSQL integration appear among the Part 3 learning outcomes. This implementation uses PostgreSQL and SQLite, not NoSQL, and does not upload incident photos. Clarify whether these outcomes require additional assessed evidence; do not describe this stack as satisfying them.
 - No physical-device verification, published store listing, screenshots, release tag or video was fabricated.
 
-Verified progress: the favourites/account-switch revision passed GitHub build/lint/unit checks and eight Android 15 instrumentation tests. See VERIFICATION.md for exact revisions and run links; provider and database deployment checks remain separate.
+Verified progress: the final merged source passed GitHub build/lint checks, 11 unit tests, and eight instrumentation tests on each of Android 7 and Android 15. See VERIFICATION.md for exact revisions and run links; provider and database deployment checks remain separate.
 
 ## Acceptance sequence (two separate test accounts)
 
