@@ -13,9 +13,13 @@ Date: 31 October 2026. This records observed checks, not a claim of complete POE
 
 ## Final revision
 
-The favourites/account-switch revision is 6d3f042. Its [Android workflow](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41176187042) passed both build and emulator jobs: eight instrumentation tests ran successfully on Android 15. These include favourite persistence/deduplication and blocking requests after an account switch. A subsequent small change, 66f05d4, makes favourite-list refresh explicit and guards optional migration helpers; check its workflow separately rather than attributing the older run to that commit.
+The favourites/account-switch revision 6d3f042 passed its [Android workflow](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41176187042), including eight Android 15 instrumentation tests. A subsequent local Android 7 run exposed two SQLite test failures because the older SQLiteOpenHelper did not implement AutoCloseable. The explicit Closeable fix in b338e2d passed the [expanded CI matrix](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41196517589): build plus API 24 and API 35 emulator jobs all succeeded. The later main-branch reconciliation should be checked against its own run, not attributed to this older run.
 
-HTTP tests intercept responses locally. They test client behaviour, not a deployed Supabase instance. SQLite tests verify queue persistence and account isolation. A local emulator launch was constrained by host memory, so emulator execution evidence comes from GitHub Actions, not an invented local device run.
+HTTP tests intercept responses locally. They test client behaviour, not a deployed Supabase instance. SQLite tests verify queue/favourite persistence and account isolation. Local emulator runs were initially constrained by host memory; after running build and emulator sequentially, the login/registration screens were exercised and captured in evidence/. The failed pre-fix local storage tests and the successful post-fix CI tests are distinct evidence.
+
+## Main-branch reconciliation
+
+The worktree began at 3d895aa; main also contained e2e6a95, bbb117e and 840acf0. Those commits are merged, not discarded. SDK 36, wrapper executable mode, ignored screenshot files and missing-secret checks are retained. PrasaRules validation/tests are retained and tightened to the current policy. Obsolete client SHA-256 hashing and User-copy tests are replaced by validation tests; Supabase Auth now owns password storage and the profile API owns persisted settings. The legacy demo-user migration remains historical and does not create a Supabase Auth login.
 
 ## Release gates still open
 

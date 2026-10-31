@@ -44,7 +44,7 @@ No privileged credentials belong in Android source. Review migration history bef
 
 ## Build and test
 
-Open in Android Studio with JDK 21 and Android SDK 36.1. Configure the provider details in DEPLOYMENT.md. Run:
+Open in Android Studio with JDK 21 and Android SDK 36. Configure the provider details in DEPLOYMENT.md. Run:
 
 ```powershell
 .\gradlew.bat :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon

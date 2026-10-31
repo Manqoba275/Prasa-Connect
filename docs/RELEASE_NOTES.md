@@ -7,6 +7,8 @@
 - Added account-scoped favourite routes with offline persistence and timetable navigation.
 - Added Google PKCE sign-in and Firebase notification integration requiring external configuration.
 - Added English/Afrikaans labels, updated branding, validation tests and CI reports.
+- Added API 24/35 CI coverage and explicit SQLite Closeable compatibility after minimum-version testing.
+- Reconciled newer main-branch validation and deployment checks with the authenticated implementation.
 
 Breaking change: legacy custom app_users passwords are not Supabase Auth credentials. Existing users must register/confirm a new Auth account. Legacy records are preserved but are not automatically linked or exposed. A verified ownership migration is required to recover them.
 

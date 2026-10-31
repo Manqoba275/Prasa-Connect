@@ -2,7 +2,7 @@
 
 Audit date: 31 October 2026. Source: OPSC POE.pdf, Part 2 requirements/rubric pp. 8-9 and 19-21; Part 3 pp. 10-12 and 22-25. Video is excluded at the student's request.
 
-**Source implemented does not mean deployed, compiled, tested or awarded marks.** The previous demo did not perform real hosted authentication or database requests. Those paths have been replaced; older reports and PDFs describing the demo are historical, not current verification evidence.
+**Source implemented does not mean deployed, compiled, tested or awarded marks.** The starting worktree contained demo authentication and simulated requests. Later commits on main added hosted requests with local fallback; these were reconciled and superseded by verified-session authentication and explicit failure handling. Older reports and PDFs are historical, not current verification evidence.
 
 ## Part 2
 

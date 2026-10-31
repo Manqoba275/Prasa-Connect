@@ -61,13 +61,11 @@ class PrasaRepository(context: Context,
         sessions.save(data)
     }
     suspend fun login(email: String, password: String) {
-        require(Validation.email(email) && password.isNotBlank()) { "Enter a valid email and password." }
+        PrasaRules.validateLogin(email,password)?.let { throw IllegalArgumentException(it) }
         accept(request("/auth/v1/token?grant_type=password", "POST", JSONObject().put("email",email.trim()).put("password",password)))
     }
     suspend fun register(name: String, email: String, mobile: String, password: String) {
-        require(name.isNotBlank() && mobile.isNotBlank() && Validation.email(email) && Validation.password(password)) {
-            "Complete all fields. Use a valid email and a password of at least 8 characters."
-        }
+        PrasaRules.validateRegistration(name,email,mobile,password)?.let { throw IllegalArgumentException(it) }
         accept(request("/auth/v1/signup", "POST", JSONObject().put("email",email.trim()).put("password",password)
             .put("data",JSONObject().put("full_name",name.trim()).put("mobile",mobile.trim()))))
     }
@@ -116,7 +114,7 @@ class PrasaRepository(context: Context,
     suspend fun book(schedule: String, requestId: String): JSONObject =
         api("/bookings","POST",JSONObject().put("scheduleId",schedule).put("requestId",requestId)).getJSONObject("data")
     suspend fun report(type: String, location: String, description: String): Boolean {
-        require(Validation.incident(type,location,description)) { "Enter a type, location and description of 10 to 3000 characters." }
+        PrasaRules.validateIncident(type,location,description)?.let { throw IllegalArgumentException(it) }
         val body = JSONObject().put("id",UUID.randomUUID().toString()).put("type",type.trim())
             .put("location",location.trim()).put("description",description.trim())
         return try { api("/incidents","POST",body); true }
