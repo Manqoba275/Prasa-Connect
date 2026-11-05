@@ -20,13 +20,14 @@ See the [submission handover](docs/SUBMISSION_HANDOVER.md) for group roles, chan
 
 ## Demonstration video
 
-Recording still needs to be added by the group. After uploading the narrated phone demonstration, replace this line with its accessible video URL: **VIDEO LINK TO BE ADDED**. Do not submit the walkthrough plan PDF in place of the recording.
+The group supplied a demo link: [Watch PRASA Connect demo](https://youtu.be/Ef8ANPoGyB4). Confirm that the video plays for the assessor and includes the required narration, on-phone workflows and hosted-data evidence. Do not submit the walkthrough plan PDF in place of the recording.
 
 - [Deployment and secrets](docs/DEPLOYMENT.md)
 - [Publication and signing checklist](docs/PUBLICATION.md)
 - [Release notes](docs/RELEASE_NOTES.md)
 - [AI assistance statement](docs/AI_USE.md)
 - [Verification results](docs/VERIFICATION.md)
+- [Play Console readiness evidence steps](docs/PLAY_CONSOLE_EVIDENCE.md)
 
 The POE requires Kotlin source on GitHub and explicitly disallows ZIP files as the source-code submission. Submit the repository link and requested PDFs/video through the official submission portal; use a ZIP only if the lecturer separately requests one for a different purpose.
 

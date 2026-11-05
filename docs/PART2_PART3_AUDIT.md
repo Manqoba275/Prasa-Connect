@@ -16,6 +16,7 @@ Audit updated: 5 November 2026. Source: OPSC POE.pdf, Part 2 requirements/rubric
 | Feature 3: incident reporting | Validated API submission and own-report history; optional private Supabase Storage photo upload with per-user object paths and 5 MB MIME-limited files | Test photo upload and report persistence on a phone; verify another account cannot read the photo |
 | Input validation and error handling | Client and SQL constraints, HTTP errors, network-only cache fallback | Invalid input, server outage, expired session and accessibility device tests |
 | Tests and GitHub Actions | Validation unit tests; durable SQLite queue and intercepted HTTP authentication/session tests; build/lint/emulator workflows | See VERIFICATION.md for actual runs; live two-user API/provider end-to-end coverage remains |
+| Demonstration video | Group supplied a YouTube URL, linked in README | Verify signed-out playback, clear voice-over, on-phone demonstration, required features and hosted auth/API/database evidence |
 | README, comments, references, AI account | Updated README and AI_USE.md | Student review, actual commit history and submission URLs |
 
 ## Part 3
