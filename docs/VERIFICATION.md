@@ -17,6 +17,10 @@ Date: 5 November 2026. This records observed checks, not a claim of complete POE
 - A combined `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` run entered lint analysis but produced no completion after several minutes and was stopped. Do not claim a fresh lint pass for this submission snapshot. Earlier CI lint results apply only to the revisions and workflow runs listed above.
 - Google OAuth sign-in was reported working by the group after configuration. Firestore rules deployment was confirmed successful in the user's Firebase CLI output. These are user-reported/deployment checks; route syncing and notification delivery still need device evidence.
 
+## Current pushed submission branch
+
+**Revision `218ab37` on `submission-ready` passed GitHub Actions.** The [Android verification run](https://github.com/Manqoba275/Prasa-Connect/actions/runs/42088204105) completed successfully: build/tests/lint and offline-storage instrumentation on Android API 24 and API 35 all passed. The [Edge Function type-check run](https://github.com/Manqoba275/Prasa-Connect/actions/runs/42088204108) also passed. This verifies the source at that revision; it does not replace physical-phone evidence or validate live provider workflows.
+
 ## Final revision
 
 **Verified source revision: d79be22.** Its [pull-request verification run](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41197041394) passed all three jobs: build/lint/unit tests, eight instrumentation tests on API 24, and eight on API 35. Its [edge-function checks](https://github.com/Manqoba275/Prasa-Connect/actions/runs/41197041415) also passed. Local unit reports independently record 11 tests with zero failures/errors. These results verify source/build behaviour, not live Google/Firebase setup or real-user acceptance flows.
