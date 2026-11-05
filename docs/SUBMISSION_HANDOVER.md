@@ -30,7 +30,7 @@ The app is an academic demonstration, not an official PRASA service. Schedules a
 - Android debug build and unit tests passed in the current worktree before packaging; rerun the commands below against the final commit and keep the GitHub Actions run URL.
 - CI and earlier emulator matrix results are recorded in [VERIFICATION.md](VERIFICATION.md). They verify the revisions and checks named there, not every later provider change.
 - Supabase migrations/functions and Firebase Firestore rules have deployment records in [DEPLOYMENT.md](DEPLOYMENT.md); phone-side two-account isolation, route sync and notification delivery need fresh evidence.
-- The PDF walkthrough is a recording plan, not a video: `output/pdf/PRASA_Connect_Video_Walkthrough.pdf`.
+- The [PDF walkthrough](PRASA_Connect_Video_Walkthrough.pdf) is a recording plan, not a video.
 - Add the actual video recording and any required phone screenshots before creating the final ZIP. Do not describe mockups as live-device evidence.
 
 ## POE gap check
