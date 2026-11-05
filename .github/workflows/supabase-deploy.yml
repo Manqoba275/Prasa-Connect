@@ -1,15 +1,25 @@
-name: Supabase Deploy
+name: Supabase deploy (reviewed migrations only)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main, master ]
-    paths:
-      - "supabase/**"
+    inputs:
+      migration_history_verified:
+        description: 'Remote schema/history and backup have been reviewed'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+concurrency:
+  group: supabase-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
+    if: inputs.migration_history_verified
     runs-on: ubuntu-latest
+    environment: production
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -32,7 +42,12 @@ jobs:
         run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
 
       - name: Push database migrations
-        run: supabase db push
+        run: |
+          supabase migration list
+          supabase db push --dry-run
+          supabase db push
 
       - name: Deploy Edge Function
-        run: supabase functions deploy prasa-api --no-verify-jwt
+        run: |
+          supabase functions deploy prasa-api --no-verify-jwt
+          supabase functions deploy send-alert --no-verify-jwt

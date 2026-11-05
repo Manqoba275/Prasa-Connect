@@ -1,29 +1,15 @@
-# PRASA Connect Supabase Backend
+# Supabase backend
 
-Project: `Prasa-Connect`
+The current source replaces the legacy SHA-256/custom-user API with Supabase Auth and user-scoped RLS.
 
-Hosted API:
+Read [deployment instructions](../docs/DEPLOYMENT.md) before applying migrations. Back up and compare remote migration history first; previously deployed timestamps may differ. Do not reset a populated database.
 
-```text
-https://awbgflgcqjofsnagkzou.supabase.co/functions/v1/prasa-api
-```
+New tables: profiles, bookings, reports, service_alerts, device_tokens. Existing schedules remain. Legacy app_users/tickets/incidents are preserved and inaccessible to ordinary clients. Legacy logins must register through Supabase Auth.
 
-Created tables:
+Functions:
+- prasa-api: public health; all data routes require a valid Auth user access token.
+- send-alert: POST only, verified user plus ALERT_ADMIN_USER_IDS allowlist; FCM_SERVICE_ACCOUNT_JSON is stored only as an edge secret.
 
-- `public.app_users`
-- `public.schedules`
-- `public.tickets`
-- `public.incidents`
+The Android publishable key is not a privileged credential. Never commit service-role keys, personal access tokens, DB passwords or Firebase service-account JSON.
 
-API routes:
-
-- `GET /`
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /schedules?from=Cape Town&to=Bellville`
-- `POST /bookings`
-- `GET /users/{userId}/tickets`
-- `POST /incidents`
-- `PATCH /users/{userId}/settings`
-
-The Edge Function uses custom auth logic and stores passwords as SHA-256 hashes for the student prototype. For production, use Supabase Auth or a stronger password hashing scheme.
+Deployment has not been verified in this session. See the main README for API routes and the audit for remaining acceptance evidence.

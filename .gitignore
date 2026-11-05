@@ -13,7 +13,15 @@
 .externalNativeBuild
 .cxx
 local.properties
-.kotlin/
-Screenshots/
+**/build/
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+**/service-account*.json
+supabase/.temp/
 hs_err_pid*.log
 replay_pid*.log
+.kotlin/
+Screenshots/

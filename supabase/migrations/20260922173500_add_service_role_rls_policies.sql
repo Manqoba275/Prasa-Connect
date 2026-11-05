@@ -22,4 +22,9 @@ to service_role
 using (true)
 with check (true);
 
-revoke execute on function public.rls_auto_enable() from anon, authenticated;
+-- Some projects install this helper; a fresh project may not have it.
+do $$ begin
+ if to_regprocedure('public.rls_auto_enable()') is not null then
+  execute 'revoke execute on function public.rls_auto_enable() from anon, authenticated';
+ end if;
+end $$;
