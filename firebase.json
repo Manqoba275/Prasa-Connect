@@ -1,0 +1,7 @@
+{
+  "firestore": {
+    "database": "prasa-app",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

@@ -1,6 +1,7 @@
 package com.example.prasa
 
 import android.content.Context
+import android.content.ContentResolver
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
@@ -111,18 +112,47 @@ class PrasaRepository(context: Context,
         return JSONObject().put("full_name",metadata.optString("full_name")).put("mobile",metadata.optString("mobile"))
             .put("language","en").put("notifications_enabled",true).put("offline_sync_enabled",true)
     }
+    suspend fun firebaseCustomToken(): String = request("/functions/v1/firebase-token", "POST", token = token()).getString("token")
     suspend fun book(schedule: String, requestId: String): JSONObject =
         api("/bookings","POST",JSONObject().put("scheduleId",schedule).put("requestId",requestId)).getJSONObject("data")
-    suspend fun report(type: String, location: String, description: String): Boolean {
+    suspend fun report(type: String, location: String, description: String, photo: Uri? = null, resolver: ContentResolver? = null): Boolean {
         PrasaRules.validateIncident(type,location,description)?.let { throw IllegalArgumentException(it) }
         val body = JSONObject().put("id",UUID.randomUUID().toString()).put("type",type.trim())
             .put("location",location.trim()).put("description",description.trim())
-        return try { api("/incidents","POST",body); true }
+        return try {
+            if (photo != null) {
+                val contentResolver = requireNotNull(resolver) { "Unable to read the selected photo." }
+                val mime = contentResolver.getType(photo) ?: "image/jpeg"
+                require(mime in setOf("image/jpeg", "image/png", "image/webp")) { "Choose a JPG, PNG, or WebP image." }
+                val bytes = contentResolver.openInputStream(photo)?.use { it.readBytes() }
+                    ?: error("Unable to read the selected photo.")
+                require(bytes.size <= 5 * 1024 * 1024) { "Photo must be 5 MB or smaller." }
+                val objectPath = "$userId/${body.getString("id")}.${when(mime) { "image/png" -> "png"; "image/webp" -> "webp"; else -> "jpg" }}"
+                uploadIncidentPhoto(objectPath, bytes, mime)
+                body.put("photo_path", objectPath)
+            }
+            api("/incidents","POST",body); true
+        }
         catch(e: IOException) {
-            if (e is ApiFailure) throw e
+            if (e is ApiFailure || (photo != null && !body.has("photo_path"))) throw e
             local.enqueue(userId,body)
             SyncWorker.schedule(app)
             false
+        }
+    }
+
+
+    private suspend fun uploadIncidentPhoto(path: String, bytes: ByteArray, mime: String) = withContext(Dispatchers.IO) {
+        val response = client.newCall(Request.Builder()
+            .url("$URL/storage/v1/object/incident-photos/${Uri.encode(path, "/")}")
+            .header("apikey", KEY)
+            .header("Authorization", "Bearer ${token()}")
+            .header("Content-Type", mime)
+            .header("x-upsert", "false")
+            .post(bytes.toRequestBody(mime.toMediaType()))
+            .build()).execute()
+        response.use {
+            if (!it.isSuccessful) throw ApiFailure(it.code, "Photo upload failed (${it.code}).")
         }
     }
     suspend fun sync(): Int {
@@ -144,8 +174,12 @@ class PrasaRepository(context: Context,
             .appendQueryParameter("redirect_to","prasaconnect://auth/callback")
             .appendQueryParameter("code_challenge",challenge).appendQueryParameter("code_challenge_method","s256").build().toString()
     }
+    suspend fun googleEnabled(): Boolean = request("/auth/v1/settings").optJSONObject("external")?.optBoolean("google") == true
     suspend fun finishGoogle(uri: Uri) {
         require(uri.scheme=="prasaconnect" && uri.host=="auth" && uri.path=="/callback") { "Invalid sign-in link." }
+        val oauthError = uri.getQueryParameter("error_description")
+            ?: uri.getQueryParameter("error")
+        if (!oauthError.isNullOrBlank()) throw IOException("Google sign-in failed: ${oauthError.replace('+',' ')}")
         val verifier = oauth.getString("verifier",null) ?: error("Sign-in expired. Try again.")
         require(System.currentTimeMillis()-oauth.getLong("started",0) < 600000) { "Sign-in expired. Try again." }
         val code = uri.getQueryParameter("code") ?: error("Google sign-in was not completed.")

@@ -19,6 +19,12 @@ class OfflineQueueTest {
             assertTrue(it.routes(UUID.randomUUID().toString()).isEmpty())
             it.removeRoute(owner,"Cape Town","Bellville")
             assertTrue(it.routes(owner).isEmpty())
+            assertEquals(listOf("Cape Town" to "Bellville"),it.pendingRouteDeletions(owner))
+            it.acknowledgeRouteDeletion(owner,"Cape Town","Bellville")
+            assertTrue(it.pendingRouteDeletions(owner).isEmpty())
+            it.removeRoute(owner,"Cape Town","Bellville")
+            it.saveRoute(owner,"Cape Town","Bellville")
+            assertTrue(it.pendingRouteDeletions(owner).isEmpty())
         }
     }
     @Test fun queueSurvivesReopenAndIsAccountScoped() {

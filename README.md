@@ -1,6 +1,6 @@
 # PRASA Connect - OPSC6312 POE
 
-An academic Android rail application using Kotlin/Compose, Supabase Auth, an authenticated REST API and PostgreSQL. The source includes timetable search, bookings with QR codes, saved favourite routes, incidents, offline report sync, settings, Google SSO wiring, FCM notification wiring and the official Gauteng rail map.
+An academic Android rail application using Kotlin/Compose, Supabase Auth, an authenticated REST API, PostgreSQL, private Supabase Storage and Firebase Cloud Firestore route sync. The source includes timetable search, bookings with QR codes, saved favourite routes, incidents with optional private photo uploads, offline report sync, settings, Google SSO wiring, FCM notification wiring and the official Gauteng rail map.
 
 **Not an official PRASA product.** Seed schedules and fares are illustrative. Bookings are persisted academic records, not valid travel tickets. No payment or live train-tracking service is integrated.
 
@@ -12,7 +12,7 @@ An academic Android rail application using Kotlin/Compose, Supabase Auth, an aut
 
 ## Submission status
 
-See [Part 2 / Part 3 audit](docs/PART2_PART3_AUDIT.md) for each requirement, remaining evidence and acceptance tests. Source changes alone do not prove deployment or rubric completion. There is no hardcoded demo login; register a real test account and confirm its email.
+See the [submission handover](docs/SUBMISSION_HANDOVER.md) for group roles, changes, evidence and final checklist, and the [Part 2 / Part 3 audit](docs/PART2_PART3_AUDIT.md) for requirement coverage. Source changes alone do not prove deployment or rubric completion. There is no hardcoded demo login; use a confirmed assessment account and share its password privately, never in Git.
 
 - [Deployment and secrets](docs/DEPLOYMENT.md)
 - [Publication and signing checklist](docs/PUBLICATION.md)
@@ -26,18 +26,19 @@ Compose screens call PrasaRepository over HTTPS with OkHttp. Password handling b
 
 The prasa-api edge function validates the user access token and queries with that user's permissions. PostgreSQL RLS isolates profiles, bookings, reports and device tokens. Booking fare and ownership are server-controlled; request IDs prevent duplicate bookings on retries. Legacy demo tables are preserved but not exposed to authenticated clients.
 
-SQLite stores account-partitioned cached reads and an incident outbox. Network failures can queue an incident; API validation/authentication failures cannot be disguised as offline success. WorkManager retries when connected, and stable report IDs make replays idempotent. Booking creation requires connectivity.
+SQLite stores account-partitioned cached reads and an incident outbox. Network failures can queue an incident; API validation/authentication failures cannot be disguised as offline success. WorkManager retries queued reports when connectivity returns and also checks periodically (15-minute minimum interval); stable report IDs make replays idempotent. Booking creation requires connectivity.
 
-Google SSO uses a browser PKCE flow and registered deep link. Firebase configuration is external; a privileged, allowlisted send-alert function sends generic service alerts through FCM. English/Afrikaans labels cover the main interface; translations and all device workflows require review.
+Google SSO uses a browser PKCE flow and registered deep link; the group reports successful sign-in after configuring the OAuth client. Firebase app configuration and protected FCM sender secrets are set; real device notification delivery still needs an acceptance test. English, Afrikaans and isiZulu labels are available; translations and all device workflows require review.
 
 ## Backend contract
 
-Configured project: awbgflgcqjofsnagkzou. The authenticated API and database migrations were deployed on 5 November 2026. Google sign-in and FCM still require provider configuration and end-to-end verification.
+Configured project: awbgflgcqjofsnagkzou. The authenticated API (version 7), private incident photo bucket, photo-path persistence and Supabase `firebase-token` bridge (version 1) were deployed on 5 November 2026. Google sign-in is reported working; phone-side route sync, notification delivery and two-user isolation still need recorded verification.
 
 - Auth: Supabase /auth/v1/signup, password/refresh/PKCE token exchanges, logout.
 - Public GET /functions/v1/prasa-api/ returns health information only.
 - Authenticated API: GET /schedules, GET /tickets, POST /bookings, GET/POST /incidents, GET/PATCH /profile, GET /alerts, POST/DELETE /devices.
-- Administrator-only POST /functions/v1/send-alert.
+- Administrator-only POST /functions/v1/send-alert; private Storage bucket `incident-photos` enforces per-user folders and accepts JPEG/PNG/WebP up to 5 MB.
+- POST /functions/v1/firebase-token verifies Supabase identity and issues a short-lived Firebase custom token using the same user UUID. Firestore `users/{uid}/saved_routes` reads/writes are scoped by `firestore.rules`; SQLite remains the offline source.
 - New tables: profiles, bookings, reports, service_alerts, device_tokens; schedules retained.
 
 No privileged credentials belong in Android source. The local migration filenames match the versions recorded by the connected Supabase project; the legacy demo-user seed is archived and excluded from deployment.

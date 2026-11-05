@@ -15,30 +15,54 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 // Offline records are partitioned by account; logout cannot expose another user's cache.
-class LocalStore(context: Context) : SQLiteOpenHelper(context, "prasa.db", null, 2), java.io.Closeable {
+class LocalStore(context: Context) : SQLiteOpenHelper(context, "prasa.db", null, 3), java.io.Closeable {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("CREATE TABLE cache (owner TEXT, name TEXT, body TEXT, PRIMARY KEY(owner,name))")
         db.execSQL("CREATE TABLE outbox (id TEXT PRIMARY KEY, owner TEXT NOT NULL, body TEXT NOT NULL)")
         createFavorites(db)
+        createFavoriteDeletions(db)
     }
     override fun onUpgrade(db: SQLiteDatabase, old: Int, new: Int) {
         if (old<2) createFavorites(db)
+        if (old<3) createFavoriteDeletions(db)
     }
     private fun createFavorites(db:SQLiteDatabase) {
         db.execSQL("CREATE TABLE favorites (owner TEXT NOT NULL, origin TEXT NOT NULL, destination TEXT NOT NULL, PRIMARY KEY(owner,origin,destination))")
     }
+    private fun createFavoriteDeletions(db:SQLiteDatabase) {
+        db.execSQL("CREATE TABLE favorite_deletions (owner TEXT NOT NULL, origin TEXT NOT NULL, destination TEXT NOT NULL, PRIMARY KEY(owner,origin,destination))")
+    }
     fun saveRoute(owner:String,origin:String,destination:String) {
         require(owner.isNotBlank() && origin.isNotBlank() && destination.isNotBlank())
-        writableDatabase.insertWithOnConflict("favorites",null,ContentValues().apply {
-            put("owner",owner); put("origin",origin); put("destination",destination)
-        },SQLiteDatabase.CONFLICT_IGNORE)
+        writableDatabase.beginTransaction()
+        try {
+            writableDatabase.insertWithOnConflict("favorites",null,ContentValues().apply {
+                put("owner",owner); put("origin",origin); put("destination",destination)
+            },SQLiteDatabase.CONFLICT_IGNORE)
+            writableDatabase.delete("favorite_deletions","owner=? AND origin=? AND destination=?",arrayOf(owner,origin,destination))
+            writableDatabase.setTransactionSuccessful()
+        } finally { writableDatabase.endTransaction() }
     }
     fun routes(owner:String):List<Pair<String,String>> =
         readableDatabase.rawQuery("SELECT origin,destination FROM favorites WHERE owner=? ORDER BY origin,destination",arrayOf(owner)).use { cursor ->
             buildList { while(cursor.moveToNext()) add(cursor.getString(0) to cursor.getString(1)) }
         }
     fun removeRoute(owner:String,origin:String,destination:String) {
-        writableDatabase.delete("favorites","owner=? AND origin=? AND destination=?",arrayOf(owner,origin,destination))
+        writableDatabase.beginTransaction()
+        try {
+            writableDatabase.delete("favorites","owner=? AND origin=? AND destination=?",arrayOf(owner,origin,destination))
+            writableDatabase.insertWithOnConflict("favorite_deletions",null,ContentValues().apply {
+                put("owner",owner); put("origin",origin); put("destination",destination)
+            },SQLiteDatabase.CONFLICT_REPLACE)
+            writableDatabase.setTransactionSuccessful()
+        } finally { writableDatabase.endTransaction() }
+    }
+    fun pendingRouteDeletions(owner:String):List<Pair<String,String>> =
+        readableDatabase.rawQuery("SELECT origin,destination FROM favorite_deletions WHERE owner=?",arrayOf(owner)).use { cursor ->
+            buildList { while(cursor.moveToNext()) add(cursor.getString(0) to cursor.getString(1)) }
+        }
+    fun acknowledgeRouteDeletion(owner:String,origin:String,destination:String) {
+        writableDatabase.delete("favorite_deletions","owner=? AND origin=? AND destination=?",arrayOf(owner,origin,destination))
     }
     fun cache(owner: String, name: String, body: String) {
         writableDatabase.insertWithOnConflict("cache", null, ContentValues().apply {

@@ -56,7 +56,10 @@ android {
 
 dependencies {
     implementation("androidx.compose.material:material-icons-core")
-    implementation("com.google.firebase:firebase-messaging:24.1.0")
+    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.zxing:core:3.5.3")
     implementation("androidx.work:work-runtime-ktx:2.9.1")

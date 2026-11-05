@@ -31,7 +31,8 @@ Deno.serve(async (req) => {
     } else if (req.method === "POST" && path === "/incidents") {
       const body = await req.json();
       result = await db.from("reports").insert({ id: body.id, user_id: user.id,
-        type: body.type, location: body.location, description: body.description }).select().single();
+        type: body.type, location: body.location, description: body.description,
+        photo_path: body.photo_path ?? null }).select().single();
       if (result.error?.code === "23505") result = await db.from("reports").select().eq("id", body.id).single();
     } else if (req.method === "GET" && path === "/incidents") {
       result = await db.from("reports").select().order("created_at", { ascending: false });

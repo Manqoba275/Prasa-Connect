@@ -55,7 +55,25 @@ The Android app contains only the project URL and publishable key. Never put a s
 
 The sender sends generic service announcements only; it is suitable for a small academic test audience, not a large production broadcast queue. Notification opt-out and logout currently remove all registered device tokens for that account. A stale token from an offline logout must never be used to send personal information.
 
-## 5. GitHub Actions
+## 5. Firestore (Part 3 NoSQL read/write)
+
+Firebase project: `prasa-4c7ba`. The app mirrors saved routes between SQLite and Firestore at `users/{supabaseUid}/saved_routes/{routeHash}`. The `firebase-token` Supabase Edge Function validates the Supabase session and issues a short-lived Firebase custom token with the same UID; `firestore.rules` denies all other data access. Do not deploy permissive test rules.
+
+The Firestore API is enabled, a named Enterprise database `prasa-app` has been created in `africa-south1`, and its owner-only rules have been deployed. To verify the deployment later, run:
+
+```powershell
+npx -y firebase-tools@latest firestore:databases:list --project prasa-4c7ba
+```
+
+The Android client and Firebase CLI configuration target this named database. Confirm Firebase Authentication's custom-token provider is enabled and Android app values are configured before testing. To redeploy the locked-down rules after a reviewed change:
+
+```powershell
+npx -y firebase-tools@latest deploy --only firestore:rules --project prasa-4c7ba
+```
+
+Ensure Supabase Edge Function secret `FCM_SERVICE_ACCOUNT_JSON` is a valid service-account JSON for the same Firebase project and contains its signing key. `firebase-token` is deployed as version 1. The app queues favourite-route changes locally and WorkManager synchronizes them when connected, including deletions; errors retry silently. Verify a route on a second device/account and confirm one user cannot read another user's route path. Check API and function logs if token exchange returns 503. The build uses Firebase app configuration from local Gradle properties or GitHub Actions Variables; no service-account key belongs in Android or GitHub.
+
+## 6. GitHub Actions
 
 Repository Settings > Secrets and variables > Actions:
 
@@ -70,7 +88,7 @@ Repository Settings > Secrets and variables > Actions:
 
 Grant the Supabase token only the database/migration and edge-function deployment access needed for this project; do not select organisation-wide full access. Create a GitHub `production` environment with required reviewers. Database deployment is manual, with an explicit migration-history confirmation; normal pushes run Android and edge-function checks only.
 
-Inspect Android verification, offline-storage-test and Edge function type checks. Download APK and test-report artifacts. A workflow file in the repository is not evidence of a successful run. Source changes are being pushed to `codex/part2-part3-integration`; see VERIFICATION.md for actual results rather than assuming deployment follows a push.
+Inspect Android verification, offline-storage-test and Edge function type checks. Download APK and test-report artifacts. A workflow file in the repository is not evidence of a successful run. Use the final branch and commit listed in the verification record; see VERIFICATION.md rather than assuming deployment follows a push.
 
 ## References
 
