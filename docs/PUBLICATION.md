@@ -7,7 +7,7 @@
 5. Capture actual release screenshots of authentication, timetable, booking/QR, incident history, offline queue, rail map, both languages and notification delivery. Mockups are not verification evidence.
 6. Prepare accurate store text, support contact, hosted privacy policy, data-safety declaration, content rating and an account-deletion process. Describe actual Supabase/Firebase processing, retention and deletion. The app lacks self-service account deletion; resolve that before public release.
 7. If required for submission, upload the signed artifact to the appropriate Play Console testing track and capture genuine upload evidence. Check current Play requirements first. An APK alone is not publication evidence.
-8. Record CI run links and the verified commit SHA, update release notes, then create the final submission tag. Video remains a rubric requirement even though excluded from this coding task.
+8. Record CI run links and the verified commit SHA, update release notes, verify the supplied narrated-video link against the POE, then create the final submission tag.
 
 Draft short description: Academic rail journey planning, bookings and incident reporting.
 

@@ -50,6 +50,6 @@ Smoke checks against the deployed endpoints returned API health version 2, `401`
 - Run the two-account live API/RLS acceptance checks in PART2_PART3_AUDIT.md.
 - Confirm chosen extra features with the original proposal; verify Firestore live read/write and cross-device sync in `africa-south1`.
 - Fluent-speaker translation review, physical-device screenshots, private release signing and any required Play Console evidence.
-- Add the actual video and phone evidence before final hand-in.
+- Verify the supplied video link, narration and rubric coverage; capture any missing phone evidence before final hand-in.
 
 Git commits use actual timestamps. No backdated history, fake users, fake live data or fabricated test results were added. The assessment changes are published on the submission branch; main is not changed by this work.

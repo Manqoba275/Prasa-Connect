@@ -35,4 +35,4 @@ The group has supplied a YouTube demo URL and it is linked in the root README. T
 - The repository has publication/signing instructions, but a signed release APK/AAB and Play Console upload/listing have not been verified in this workspace.
 - The app's current debug APK is for device testing only.
 - The group still needs to capture the signup screens above on the authorised account holder's browser. No signup, fee acceptance or payment was performed by this project work.
-- The published app video does not exist yet. The walkthrough PDF is only a recording plan.
+- A YouTube demo URL has been provided and documented; playback, voice-over, privacy settings and rubric coverage still need confirmation. The walkthrough PDF is only a recording plan, not the video.

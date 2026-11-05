@@ -41,7 +41,7 @@ Audit updated: 5 November 2026. Source: OPSC POE.pdf, Part 2 requirements/rubric
 - Real PRASA operational data, payments, live train tracking and official ticket validation are not provided. API records persist real user actions, but schedules/fares are labelled academic samples.
 - Incident photos upload to private Supabase Storage and are linked to report records. Firestore `prasa-app` is provisioned in `africa-south1`, and owner-only rules were deployed. The app now queues route changes for connected background sync and suppresses Firebase configuration warnings in the passenger UI. Device end-to-end read/write and cross-device ownership checks remain.
 - Part 1 feature parity gaps remain: no wallet/payment flow, official live train feed, or full searchable station catalogue. The current station list is derived from schedule origins and destinations. Review the Part 1 research/design document and complete remaining submission evidence against the roles and rubric.
-- No physical-device verification, published store listing, final release tag or video was fabricated. Add the actual recording and device evidence before final hand-in.
+- The demo URL was provided by the group and added to README; its playback, narration and coverage are not independently verified. Physical-device acceptance evidence, Play Console signup screenshots, signed release artifact and final tag remain outstanding.
 
 Verified progress: the final merged source passed GitHub build/lint checks, 11 unit tests, and eight instrumentation tests on each of Android 7 and Android 15. See VERIFICATION.md for exact revisions and run links; provider and database deployment checks remain separate.
 
