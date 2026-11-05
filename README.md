@@ -14,11 +14,21 @@ An academic Android rail application using Kotlin/Compose, Supabase Auth, an aut
 
 See the [submission handover](docs/SUBMISSION_HANDOVER.md) for group roles, changes, evidence and final checklist, and the [Part 2 / Part 3 audit](docs/PART2_PART3_AUDIT.md) for requirement coverage. Source changes alone do not prove deployment or rubric completion. There is no hardcoded demo login; use a confirmed assessment account and share its password privately, never in Git.
 
+## App design
+
+![PRASA Connect screen mockups](PRASA_Connect_Mockups.png)
+
+## Demonstration video
+
+Recording still needs to be added by the group. After uploading the narrated phone demonstration, replace this line with its accessible video URL: **VIDEO LINK TO BE ADDED**. Do not submit the walkthrough plan PDF in place of the recording.
+
 - [Deployment and secrets](docs/DEPLOYMENT.md)
 - [Publication and signing checklist](docs/PUBLICATION.md)
 - [Release notes](docs/RELEASE_NOTES.md)
 - [AI assistance statement](docs/AI_USE.md)
 - [Verification results](docs/VERIFICATION.md)
+
+The POE requires Kotlin source on GitHub and explicitly disallows ZIP files as the source-code submission. Submit the repository link and requested PDFs/video through the official submission portal; use a ZIP only if the lecturer separately requests one for a different purpose.
 
 ## Architecture and design
 
