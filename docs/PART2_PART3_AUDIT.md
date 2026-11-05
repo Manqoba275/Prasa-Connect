@@ -1,6 +1,6 @@
 # Part 2 and Part 3 audit
 
-Audit date: 31 October 2026. Source: OPSC POE.pdf, Part 2 requirements/rubric pp. 8-9 and 19-21; Part 3 pp. 10-12 and 22-25. Video is excluded at the student's request.
+Audit updated: 5 November 2026. Source: OPSC POE.pdf, Part 2 requirements/rubric pp. 8-9 and 19-21; Part 3 pp. 10-12 and 22-25. Video is excluded at the student's request.
 
 **Source implemented does not mean deployed, compiled, tested or awarded marks.** The starting worktree contained demo authentication and simulated requests. Later commits on main added hosted requests with local fallback; these were reconciled and superseded by verified-session authentication and explicit failure handling. Older reports and PDFs are historical, not current verification evidence.
 
@@ -8,9 +8,9 @@ Audit date: 31 October 2026. Source: OPSC POE.pdf, Part 2 requirements/rubric pp
 
 | Requirement | Source work | Remaining evidence |
 | --- | --- | --- |
-| Registration, login, logout; secure passwords | Supabase Auth REST, email confirmation handling, refresh tokens, encrypted Keystore-backed session | Deploy configuration; test new account, duplicate email, incorrect password, confirmation and logout on a phone |
+| Registration, login, logout; secure passwords | Supabase Auth REST, email confirmation handling, refresh tokens, encrypted Keystore-backed session | Test new account, duplicate email, incorrect password, confirmation and logout on a phone |
 | Meaningful settings | Profile API, language, notifications and offline-sync preferences | Verify persistence after restart and across accounts |
-| Hosted REST API and database integration | Android OkHttp repository, authenticated edge API, PostgreSQL migrations, user-owned RLS | Apply reviewed migrations; deploy function; demonstrate two-user isolation and persisted records |
+| Hosted REST API and database integration | Android OkHttp repository, authenticated edge API, PostgreSQL migrations, user-owned RLS | Migrations and API deployed 5 Nov 2026; demonstrate live two-user isolation and persisted app records |
 | Feature 1: timetable search | API query with account-scoped offline cache | Seeded timetables are examples, not a live PRASA feed; verify route queries |
 | Feature 2: bookings and QR tickets | Server-derived fare, idempotent insert, genuine QR encoding of stored booking ID | Verify booking and QR decoding; academic tickets are not valid travel tickets |
 | Feature 3: incident reporting | Validated API submission and own-report history | Submit and inspect persisted record; test denial of another user's records |
@@ -24,7 +24,7 @@ Audit date: 31 October 2026. Source: OPSC POE.pdf, Part 2 requirements/rubric pp
 | --- | --- | --- |
 | SSO | Google OAuth browser flow with PKCE and deep-link callback | Google provider/client configuration and real Google sign-in test |
 | Offline operation and sync | SQLite report outbox; stable IDs; WorkManager network constraint/retry; manual sync | Airplane mode, process restart, reconnect and no-duplicate database demonstration |
-| Real push notifications | FCM service, runtime permission, device API, admin-only FCM HTTP v1 sender | Firebase public app values, server service-account secret, administrator allowlist, foreground/background delivery test |
+| Real push notifications | FCM service, runtime permission, device API, admin-only FCM HTTP v1 sender; protected `send-alert` function deployed 5 Nov 2026 | Firebase public app values, server service-account secret, administrator allowlist, foreground/background delivery test |
 | Two South African languages | English and Afrikaans navigation/forms | Fluent-speaker review; some backend errors and server content remain English |
 | Feature 4 | Official Gauteng rail-map screen | Device legibility/navigation evidence; not live GPS tracking |
 | Feature 5 | Saved favourite routes with offline account-scoped SQLite persistence, duplicate prevention, remove and reopen-search actions | Verify navigation and account isolation; confirm chosen features match the accepted Part 1 proposal |
@@ -34,7 +34,7 @@ Audit date: 31 October 2026. Source: OPSC POE.pdf, Part 2 requirements/rubric pp
 
 ## Not completed or not claimed
 
-- No hosted database or edge deployment was performed in this session: the Supabase connector is not available here.
+- Database migrations and both Edge Functions were deployed to Supabase on 5 November 2026. This is not yet proof of end-to-end authentication, user isolation or phone notification delivery.
 - Initial sandboxed Gradle execution was blocked; after access changed, Android compilation, unit tests, debug APK packaging and lint ran successfully. See VERIFICATION.md for final artifact/test status. These checks do not prove hosted integrations work.
 - Real PRASA operational data, payments, live train tracking and official ticket validation are not provided. API records persist real user actions, but schedules/fares are labelled academic samples.
 - Blob upload and NoSQL integration appear among the Part 3 learning outcomes. This implementation uses PostgreSQL and SQLite, not NoSQL, and does not upload incident photos. Clarify whether these outcomes require additional assessed evidence; do not describe this stack as satisfying them.
