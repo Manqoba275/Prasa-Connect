@@ -4,7 +4,7 @@ Do not paste tokens, passwords, keystores or service-account JSON into chat or c
 
 ## 1. Review the database before deployment
 
-The source targets project `awbgflgcqjofsnagkzou`. Confirm it is the intended project. Back up existing data. Older deployment sessions may have recorded migrations under different timestamps from the local 20260922 files.
+The source targets project `awbgflgcqjofsnagkzou`. Confirm it is the intended project and back up existing data before future schema changes. The local migration filenames have been aligned with the versions recorded by this connected project. The old demo-user seed is archived outside `supabase/migrations` and is intentionally excluded from deployment.
 
 With Supabase CLI authenticated on your own machine, run:
 
@@ -14,9 +14,9 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-Compare the remote schema and migration history with every local migration. Do not use `--include-all`, reset the database or blindly mark migrations applied. Where remote migrations contain equivalent SQL under different IDs, reconcile the baseline/history only after verifying the actual SQL. Supabase documents `migration repair`, but it edits history, not schema. Existing custom users are not migrated into Supabase Auth; create confirmed test accounts. Keep old rows private until a separately reviewed ownership migration is available.
+Confirm the migration list matches before pushing. Do not use `--include-all`, reset the database or blindly mark migrations applied. Supabase documents `migration repair`, but it edits history, not schema. Existing custom users are not migrated into Supabase Auth; create confirmed test accounts. Keep old rows private until a separately reviewed ownership migration is available.
 
-For an already baselined project the new migrations create profiles, bookings, reports, service_alerts and device_tokens, with RLS and the booking RPC. Apply them once, then deploy both functions:
+For this project, the migrations creating profiles, bookings, reports, service_alerts and device_tokens have been applied, and both functions are deployed. These commands are for future reviewed deployments:
 
 ```sh
 supabase db push
@@ -26,7 +26,7 @@ supabase functions deploy send-alert --no-verify-jwt
 
 `--no-verify-jwt` disables the gateway check only. Both functions verify bearer access tokens using Supabase Auth. The app API uses user-scoped clients/RLS; only the allowlisted alert sender uses the service role after authorization. Test missing/invalid credentials before release.
 
-The old security migrations reference `public.rls_auto_enable()`, a project-specific function. They now guard the revocation with an existence check for fresh installations; existing projects retain the same revocation behaviour. Already-applied migrations are not automatically re-run. Still compare the remote baseline/history before using the deploy workflow; these guards do not reconcile mismatched migration IDs.
+The old security migrations reference `public.rls_auto_enable()`, a project-specific function. They guard the revocation with an existence check for fresh installations. Already-applied migrations are not automatically re-run.
 
 ## 2. Email/password authentication
 

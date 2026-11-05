@@ -32,7 +32,7 @@ Google SSO uses a browser PKCE flow and registered deep link. Firebase configura
 
 ## Backend contract
 
-Configured project: awbgflgcqjofsnagkzou. New source must be deployed before the updated Android client can use it.
+Configured project: awbgflgcqjofsnagkzou. The authenticated API and database migrations were deployed on 5 November 2026. Google sign-in and FCM still require provider configuration and end-to-end verification.
 
 - Auth: Supabase /auth/v1/signup, password/refresh/PKCE token exchanges, logout.
 - Public GET /functions/v1/prasa-api/ returns health information only.
@@ -40,7 +40,7 @@ Configured project: awbgflgcqjofsnagkzou. New source must be deployed before the
 - Administrator-only POST /functions/v1/send-alert.
 - New tables: profiles, bookings, reports, service_alerts, device_tokens; schedules retained.
 
-No privileged credentials belong in Android source. Review migration history before deploying: old remote timestamps may differ from local baseline files.
+No privileged credentials belong in Android source. The local migration filenames match the versions recorded by the connected Supabase project; the legacy demo-user seed is archived and excluded from deployment.
 
 ## Build and test
 

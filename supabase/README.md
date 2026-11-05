@@ -2,7 +2,7 @@
 
 The current source replaces the legacy SHA-256/custom-user API with Supabase Auth and user-scoped RLS.
 
-Read [deployment instructions](../docs/DEPLOYMENT.md) before applying migrations. Back up and compare remote migration history first; previously deployed timestamps may differ. Do not reset a populated database.
+The migrations in this repository are aligned to the version IDs recorded by the connected `Prasa-Connect` project. The legacy demo-user seed is archived outside the migration directory and must not be deployed.
 
 New tables: profiles, bookings, reports, service_alerts, device_tokens. Existing schedules remain. Legacy app_users/tickets/incidents are preserved and inaccessible to ordinary clients. Legacy logins must register through Supabase Auth.
 
@@ -12,4 +12,4 @@ Functions:
 
 The Android publishable key is not a privileged credential. Never commit service-role keys, personal access tokens, DB passwords or Firebase service-account JSON.
 
-Deployment has not been verified in this session. See the main README for API routes and the audit for remaining acceptance evidence.
+Deployment was performed on 5 November 2026: `authenticated_app` and `push_devices` were applied; `prasa-api` version 3 and `send-alert` version 1 are active. The six existing sample schedules are retained. Email/Google authentication, FCM secrets and live two-user acceptance tests still need configuration and verification. See the audit and verification record for remaining evidence.
